@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Manual Mockup</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --section-bg: #f9fafb;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --warn: #f59e0b;
+    --good: #16a34a;
+    --good-bg: #f0fdf4;
+    --good-border: #86efac;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-border: #fca5a5;
+    --thought: #f3f4f6;
+    --action: #dbeafe;
+    --observation: #dcfce7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+    color: var(--fg);
+    background: #f5f5f7;
+    margin: 0;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  .page {
+    max-width: 1440px;
+    margin: 0 auto;
+    background: var(--bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+  .page-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+  }
+  .page-tab {
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .page-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .main { padding: 32px 40px 40px; }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+
+  /* Intro callout */
+  .intro {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 22px 26px;
+    border-radius: 0 8px 8px 0;
+    font-size: 18px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+  .intro p { margin: 0 0 12px; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro strong { color: var(--accent); font-weight: 700; }
+
+  /* Sections */
+  .sec {
+    margin-bottom: 44px;
+  }
+  .sec h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .sec h3 {
+    margin: 32px 0 6px;
+    font-size: 18px;
+    color: var(--fg);
+  }
+  .sec-desc {
+    color: var(--muted);
+    margin: 0 0 16px;
+    font-size: 14px;
+  }
+
+  /* Example trajectory */
+  .example {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .example .task-line {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 8px;
+    background: #6366f1;
+    color: white;
+  }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .step-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 12px;
+  }
+  .step-num { font-weight: 700; color: var(--accent); }
+  .step-thumb {
+    width: 100%;
+    height: auto;
+    background: #fff;
+    border-radius: 4px;
+    margin: 8px 0;
+    display: block;
+    border: 1px solid var(--border);
+  }
+  .step-action {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: #374151;
+    background: #f3f4f6;
+    padding: 6px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+    margin: 4px 0;
+    word-break: break-word;
+  }
+  .step-thought {
+    margin: 6px 0 0;
+    color: var(--fg);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .step-thought::before {
+    content: "Thought ";
+    display: inline-block;
+    font-weight: 700;
+    color: #6d28d9;
+    margin-right: 4px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+
+  /* T/A/O box */
+  .tao-step {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .tao-left {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .tao-image {
+    width: 100%;
+    height: 250px;
+    background: linear-gradient(135deg, #ddd 25%, #eee 50%, #ddd 75%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .tao-image-real {
+    display: block;
+    max-width: 100%;
+    max-height: 320px;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+  }
+  .tao-image-cap {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    background: white;
+    border-top: 1px solid var(--border);
+  }
+  .tao-right { display: flex; flex-direction: column; gap: 16px; }
+  .tao-box {
+    border-left: 4px solid;
+    border-radius: 0 6px 6px 0;
+    padding: 14px 16px;
+    background: white;
+  }
+  .tao-box.observation { border-color: var(--good); background: var(--observation); }
+  .tao-box.thought    { border-color: var(--muted); background: var(--thought); }
+  .tao-box.action     { border-color: var(--accent); background: var(--action); }
+  .tao-label {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--fg);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tao-role {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+  }
+  .tao-role.auto { background: #e5e7eb; color: #374151; }
+  .tao-role.user { background: var(--accent); color: white; }
+  .tao-content {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+  .tao-content code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    background: rgba(0,0,0,0.06);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  .tao-explain {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .tao-intro {
+    font-size: 20px;
+    line-height: 1.65;
+    color: var(--fg);
+    margin: 28px 0 8px;
+    font-weight: 600;
+  }
+  .tao-intro strong { color: var(--accent); }
+  .tao-intro-list {
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--fg);
+    margin: 0 0 12px;
+    padding-left: 28px;
+  }
+  .tao-intro-list li { margin-bottom: 6px; }
+  .tao-intro-list strong { color: var(--accent); }
+  .tao-intro-foot {
+    margin: 8px 0 14px;
+    color: var(--fg);
+    font-size: 19px;
+    line-height: 1.65;
+  }
+  .tao-intro-foot strong { color: var(--accent); font-weight: 700; }
+  .tao-intro-list strong, .tao-intro strong { font-weight: 700; }
+
+  /* 3 rules with examples */
+  .rule {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  .rule-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .rule-num {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .rule-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 2px 0 4px;
+  }
+  .rule-body {
+    font-size: 16px;
+    color: var(--fg);
+    line-height: 1.65;
+  }
+  .rule-body strong { color: var(--accent); font-weight: 700; }
+  .rule-body .em { color: var(--danger); font-weight: 700; }
+
+  /* Example slot inside a rule */
+  .ex-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .ex {
+    border: 2px solid;
+    border-radius: 6px;
+    padding: 12px;
+    background: white;
+  }
+  .ex.good { border-color: var(--good-border); }
+  .ex.bad  { border-color: var(--danger-border); }
+  .ex-img {
+    width: 100%;
+    height: 110px;
+    background: linear-gradient(135deg, #f3f4f6 25%, #fff 50%, #f3f4f6 75%);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .ex-cap {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--fg);
+  }
+  .ex.good .ex-tag { color: var(--good); font-weight: 700; }
+  .ex.bad  .ex-tag { color: var(--danger); font-weight: 700; }
+
+  /* Sequence of two images (stacked) for distraction story */
+  .ex-seq {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .ex-seq .ex-img { height: 90px; margin-bottom: 0; }
+  .ex-seq-arrow {
+    color: var(--muted);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1;
+    margin: 1px 0;
+  }
+
+  /* Stacked good/bad layout (rule ①) — green on top, red on bottom */
+  .ex-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  /* Two thumbnails packed side-by-side in the good box */
+  .ex-twin {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ex-twin .ex-img { height: 110px; margin-bottom: 0; }
+
+  /* Real (jpg) image inside .ex */
+  .ex-img-real {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    margin: 0 0 8px;
+  }
+  /* Safety row: lock both images to the same height regardless of aspect ratio */
+  .ex-row-safety .ex-img-real {
+    width: 100%;
+    height: 320px;
+    object-fit: contain;
+    background: white;
+  }
+
+  /* Single example slot (no good/bad split) */
+  .ex-single {
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    background: white;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* Rule ② safety single example (image left, text right) */
+  .ex-safety {
+    display: grid;
+    grid-template-columns: 470px 1fr;
+    gap: 22px;
+    align-items: start;
+    margin-top: 10px;
+    padding: 16px 18px;
+    background: #f5f3ff;
+    border: 1px dashed #c4b5fd;
+    border-radius: 8px;
+  }
+  .ex-safety-img img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #ddd6fe;
+    border-radius: 6px;
+    margin: 0;
+  }
+  .ex-safety-text p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .ex-safety-text strong { color: #6d28d9; }
+  @media (max-width: 900px) {
+    .ex-safety { grid-template-columns: 1fr; }
+  }
+
+  /* Rule ③ Thought guidance table */
+  .thought-howto {
+    margin-top: 12px;
+  }
+  .thought-howto-format {
+    background: var(--accent-light);
+    border: 1px dashed var(--accent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 16px;
+    text-align: center;
+    color: var(--fg);
+  }
+  .thought-howto-format strong { color: var(--accent); }
+  .thought-howto-checks {
+    margin: 12px 0;
+    padding-left: 20px;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .thought-howto-checks li { margin-bottom: 4px; }
+  .thought-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .thought-table th,
+  .thought-table td {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .thought-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+    text-align: center;
+  }
+  .thought-table th.bad { color: var(--danger); }
+  .thought-table th.good { color: var(--good); }
+  .thought-table td.bad { background: #fef2f2; }
+  .thought-table td.good { background: #f0fdf4; }
+  .thought-table td.center { text-align: center; }
+  .thought-howto-foot {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #78350f;
+  }
+
+  /* Rule ③ example layout: image left, good/bad cards stacked right */
+  .thought-ex {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 14px;
+    align-items: start;
+  }
+  .thought-ex-img img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .thought-ex-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .thought-ex-cards .ex {
+    margin: 0;
+    padding: 14px 16px;
+  }
+  .ex-card-label {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+  .ex.good .ex-card-label { color: #16a34a; }
+  .ex.bad  .ex-card-label { color: var(--danger); }
+  .ex-card-text {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--fg);
+    margin: 0;
+  }
+  .ex-card-reason {
+    margin-top: 14px;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* Practice section */
+  .practice {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .practice-text { flex: 1; font-size: 14px; }
+  .practice-text strong { color: #92400e; }
+  .practice button {
+    padding: 10px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* nav */
+  .nav {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .nav button {
+    padding: 14px 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .nav button small {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-bottom: 2px;
+  }
+
+  /* Page section visibility */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+
+  /* ── Page 2 & 3 shared ── */
+
+  /* Task card */
+  .task-card {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .task-card-icon {
+    font-size: 24px;
+    flex: 0 0 auto;
+    margin-top: 2px;
+  }
+  .task-card-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #92400e;
+    margin-bottom: 6px;
+  }
+  .task-card-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.5;
+  }
+
+  /* Tool interface mockup */
+  .tool-frame {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .tool-titlebar {
+    background: #f3f4f6;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tool-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .tool-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  .tool-dot.red   { background: #ef4444; }
+  .tool-dot.yellow{ background: #f59e0b; }
+  .tool-dot.green { background: #22c55e; }
+  .tool-url-bar {
+    flex: 1;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+  }
+  .tool-body {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    min-height: 400px;
+  }
+  .tool-screenshot {
+    border-right: 1px solid var(--border);
+    position: relative;
+    background: #f9fafb;
+  }
+  .tool-screenshot img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .tool-screenshot-label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .tool-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 14px;
+    background: #fafafa;
+  }
+  .tool-panel-section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .tool-panel-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .tool-panel-section-label.obs  { color: var(--good); }
+  .tool-panel-section-label.act  { color: var(--accent); }
+  .tool-panel-section-label.tho  { color: #6d28d9; }
+  .tool-panel-action {
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    background: #f3f4f6;
+    padding: 8px 10px;
+    border-radius: 4px;
+    color: #1f2937;
+  }
+  .tool-panel-obs {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .tool-panel-textarea {
+    width: 100%;
+    border: 1.5px solid #c4b5fd;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    color: #374151;
+    background: #f5f3ff;
+    box-sizing: border-box;
+  }
+  .tool-panel-textarea::placeholder { color: #a78bfa; }
+  .tool-panel-hint {
+    font-size: 12px;
+    color: #7c3aed;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .tool-panel-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+  }
+  .tool-btn {
+    flex: 1;
+    padding: 11px 0;
+    border-radius: 6px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .tool-btn.primary { background: var(--accent); color: white; }
+  .tool-btn.secondary { background: #e5e7eb; color: #374151; }
+  .tool-footer {
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f9fafb;
+  }
+  .tool-progress-label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .tool-progress-bar-wrap {
+    flex: 1;
+    background: #e5e7eb;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .tool-progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 10px;
+  }
+
+  /* DevTools-style tool frame */
+  .devtools-frame {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .devtools-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+  }
+  .devtools-screenshot {
+    position: relative;
+    background: #f9fafb;
+    border-right: 1.5px solid var(--border);
+  }
+  .devtools-screenshot img {
+    display: block;
+    width: 100%;
+    height: 480px;
+    object-fit: cover;
+    object-position: top;
+  }
+  .devtools-panel {
+    background: #f8f9fb;
+    display: flex;
+    flex-direction: column;
+  }
+  .devtools-panel-header {
+    background: #f1f3f5;
+    border-bottom: 1.5px solid var(--border);
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .devtools-section {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .devtools-thought-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .devtools-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .devtools-section-label.action-label { color: var(--accent); }
+  .devtools-section-label.thought-label { color: #7c3aed; }
+  .devtools-section .tool-panel-action {
+    background: #f3f4f6;
+    color: #1f2937;
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 6px 10px;
+  }
+  .devtools-section .tool-panel-textarea {
+    background: white;
+    border-color: #c4b5fd;
+    color: #1f2937;
+    font-size: 12px;
+    min-height: 90px;
+    margin-bottom: 6px;
+  }
+  .devtools-section .tool-panel-textarea::placeholder { color: #a78bfa; }
+  .devtools-section .tool-panel-hint {
+    color: #7c3aed;
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+  .devtools-save-btn {
+    width: 100%;
+    padding: 9px 0;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .devtools-save-btn:hover { background: #1d4ed8; }
+  .devtools-divider {
+    padding: 8px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    background: #f1f3f5;
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .devtools-outcome-btns {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    background: #f8f9fb;
+  }
+  .devtools-outcome {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .success-btn  { background: var(--good-bg);  color: var(--good);    border: 1.5px solid var(--good-border); }
+  .failure-btn  { background: var(--danger-bg); color: var(--danger);  border: 1.5px solid var(--danger-border); }
+  .retry-btn    { background: #fffbeb;           color: #92400e;        border: 1.5px solid #fde68a; }
+  .success-btn:hover  { background: #dcfce7; }
+  .failure-btn:hover  { background: #fee2e2; }
+  .retry-btn:hover    { background: #fef3c7; }
+
+  /* Step flow (page 2 practice guide) */
+  .practice-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 20px;
+    counter-reset: pstep;
+  }
+  .practice-step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 0 16px;
+    position: relative;
+  }
+  .practice-step:not(:last-child) .ps-line {
+    position: absolute;
+    left: 19px;
+    top: 40px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .ps-num {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    z-index: 1;
+    position: relative;
+  }
+  .ps-content {
+    padding-bottom: 28px;
+  }
+  .ps-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 8px 0 6px;
+  }
+  .ps-desc {
+    font-size: 15px;
+    color: var(--fg);
+    line-height: 1.65;
+    margin: 0 0 10px;
+  }
+  .ps-desc strong { color: var(--accent); }
+  .ps-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .ps-tag.auto { background: #e5e7eb; color: #374151; }
+  .ps-tag.user { background: #ede9fe; color: #6d28d9; }
+
+  /* Checklist (page 2) */
+  .checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .checklist li .ck-icon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 50%;
+    background: var(--good-bg);
+    border: 2px solid var(--good-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-top: 1px;
+  }
+
+  /* Page 3 — task assignment card */
+  .assign-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+  }
+  .assign-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .assign-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .assign-id {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+  }
+  .assign-task-text {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .assign-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .assign-meta-item {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .assign-meta-item strong { color: var(--fg); }
+
+  /* Page 3 — steps tracker */
+  .step-tracker {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+  }
+  .step-tracker-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 14px;
+  }
+  .step-tracker-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .step-bubble {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    border: 2px solid;
+  }
+  .step-bubble.done    { background: var(--good-bg);   border-color: var(--good-border);   color: var(--good); }
+  .step-bubble.current { background: var(--accent);     border-color: var(--accent);         color: white; }
+  .step-bubble.pending { background: white;             border-color: var(--border);         color: var(--muted); }
+
+  /* Page 3 — submit section */
+  .submit-section {
+    background: var(--good-bg);
+    border: 1.5px solid var(--good-border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .submit-icon { font-size: 32px; }
+  .submit-text { flex: 1; }
+  .submit-text strong { font-size: 16px; display: block; margin-bottom: 4px; color: var(--good); }
+  .submit-text p { margin: 0; font-size: 14px; color: #374151; line-height: 1.5; }
+  .submit-btn {
+    padding: 14px 28px;
+    background: var(--good);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Caution box */
+  .caution {
+    background: #fef3c7;
+    border-left: 4px solid var(--warn);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #78350f;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+  .caution strong { color: #92400e; }
+
+  /* Button image placeholder */
+  .btn-img-placeholder {
+    margin-top: 12px;
+  }
+  .btn-img-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    height: 52px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    letter-spacing: 0.3px;
+  }
+
+  /* Outcome list (성공 / 실패 / 다시하기) */
+  .outcome-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .outcome-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: white;
+  }
+  .outcome-row:last-child { border-bottom: none; }
+  .outcome-btn-slot {
+    padding: 16px 18px;
+    border-right: 1px solid var(--border);
+    background: #f9fafb;
+  }
+  .outcome-btn-slot .btn-img-box {
+    height: 44px;
+    margin-top: 0;
+  }
+  .outcome-info {
+    padding: 16px 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .outcome-label {
+    font-size: 15px;
+    font-weight: 800;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .outcome-label.success { color: var(--good); }
+  .outcome-label.failure { color: var(--danger); }
+  .outcome-label.retry   { color: var(--warn); }
+  .outcome-row-desc {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.55;
+  }
+  .outcome-ex {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* 연습하기 버튼 */
+  .practice-start-btn {
+    padding: 16px 56px;
+    background: var(--good);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+    letter-spacing: 0.3px;
+  }
+  .practice-start-btn:hover { background: #15803d; }
+
+  /* Page 3 — 탐색/시작 버튼 행 */
+  .work-action-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  .work-action-item {
+    flex: 1;
+  }
+  .work-action-desc {
+    margin: 10px 0 0;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .work-btn {
+    width: 100%;
+    padding: 18px 0;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  .explore-btn {
+    background: var(--accent);
+    color: white;
+    border: 1.5px solid transparent;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+  }
+  .explore-btn:hover { background: #1d4ed8; }
+  .explore-btn.done {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+    box-shadow: none;
+  }
+  .explore-btn.done:hover { background: #e5e7eb; }
+  .start-btn {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border: 1.5px solid #d1d5db;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .start-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+    cursor: pointer;
+  }
+  .start-btn.active:hover { background: #1d4ed8; }
+
+  /* 시작하기 버튼 */
+  .work-start-btn {
+    padding: 16px 56px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    letter-spacing: 0.3px;
+  }
+  .work-start-btn:hover { background: #1d4ed8; }
+
+  /* Repeat note */
+  .repeat-note {
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="showPage(0)">1. Trajectory 이해하기</button>
+    <button class="page-tab" onclick="showPage(1)">2. Trajectory 생성 연습하기</button>
+    <button class="page-tab" onclick="showPage(2)">3. Trajectory 생성하기</button>
+  </div>
+
+  <!-- ══════════════ PAGE 1 ══════════════ -->
+  <div class="page-section active" id="page-1">
+  <div class="main">
+    <h1>Trajectory 생성 지침</h1>
+
+    <!-- Intro callout: 작업 안내 -->
+    <div class="intro">
+      여러분이 할 일은 웹에서 수행할 수 있는 구체적인 목표가 담긴 <strong>Task</strong>를 직접 수행하고, 그 일련의 과정을 기록으로 남기는 것입니다. 각 행동 하나하나는 <strong>Step</strong>이 되고, 처음부터 끝까지 완성된 전체 과정을 <strong>Trajectory</strong>라고 부릅니다. 여러분이 남긴 Trajectory는 나중에 <strong>AI가 사람처럼 웹을 다루도록 학습하는 데</strong> 사용됩니다.
+    </div>
+
+    <!-- Step 생성 과정 (T/A/O 박스) -->
+    <div class="sec">
+      <h2>Step 생성 과정</h2>
+      <p class="sec-desc">하나의 Step은 아래 세 가지 요소로 구성됩니다.</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:var(--good);">Observation</span>
+          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
+          <span style="color:var(--fg);">— Action 직전의 화면이 자동으로 저장됩니다.</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:var(--accent);">Action</span>
+          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
+          <span style="color:var(--fg);">— 클릭·타이핑·스크롤 등 수행한 행동이 자동으로 저장됩니다.</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:#6d28d9;">Thought</span>
+          <span style="color:#6d28d9; font-size:13px; font-weight:600; background:#ede9fe; padding:1px 8px; border-radius:8px;">직접 작성</span>
+          <span style="color:var(--fg);">— Action 직후 활성화되는 입력창에 해당 행동을 한 이유를 작성합니다.</span>
+        </div>
+      </div>
+
+      <div class="tao-step">
+        <div class="tao-left">
+          <img class="tao-image-real" src="examples/dunkin_peach/0004_marked.jpg" alt="Step 4 화면">
+          <div class="tao-image-cap">맛 옵션 선택 화면</div>
+        </div>
+        <div class="tao-right">
+          <div class="tao-box observation">
+            <div class="tao-label">Observation <span class="tao-role auto">자동 저장</span></div>
+            <div class="tao-content">← 왼쪽 스크린샷</div>
+          </div>
+          <div class="tao-box action">
+            <div class="tao-label">Action <span class="tao-role auto">자동 저장</span></div>
+            <div class="tao-content"><code>left_click (692, 622)</code></div>
+          </div>
+          <div class="tao-box thought">
+            <div class="tao-label">Thought <span class="tao-role user"><strong>직접 작성</strong></span></div>
+            <div class="tao-content">"To select the Task-specified option among the available flavor variants, the Peach Passionfruit Lemonade option is clicked on the product detail page."</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 예시 Trajectory -->
+    <div class="sec">
+      <h2>생성해야하는 Trajectory 예시</h2>
+
+      <div class="example">
+        <div class="task-line">
+          Purchase Dunkin' Zero Sugar Refreshers SINGLES TO GO in Peach Passionfruit Lemonade Flavor.
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card">
+            <span class="step-num">Step 1</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0001.jpg" alt="step 1">
+            <div class="step-action">type "dunkin zero sugar refreshers singles to go"</div>
+            <p class="step-thought">To search for the product, the core keywords of the Task (brand, line, and product name) are entered into the Google search bar.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 2</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0002.jpg" alt="step 2">
+            <div class="step-action">key ["Enter"]</div>
+            <p class="step-thought">To execute the search and navigate to the results page, the Enter key is pressed.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 3</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0003_marked.jpg" alt="step 3">
+            <div class="step-action">left_click (387, 653)</div>
+            <p class="step-thought">To navigate to the Amazon product detail page for Dunkin' Refreshers Singles To Go, the corresponding product link is clicked from the search results list.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 4</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0004_marked.jpg" alt="step 4">
+            <div class="step-action">left_click (692, 622)</div>
+            <p class="step-thought">To select the Task-specified option among the available flavor variants, the Peach Passionfruit Lemonade option is clicked on the product detail page.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 5</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0005_marked.jpg" alt="step 5">
+            <div class="step-action">left_click (1298, 662)</div>
+            <p class="step-thought">With the Peach Passionfruit Lemonade option confirmed as selected, the "Buy Now" button is clicked to proceed with the purchase.</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 6</span>
+            <img class="step-thumb" src="examples/dunkin_peach/0006.jpg" alt="step 6 — terminate">
+            <div class="step-action">terminate (success)</div>
+            <p class="step-thought">Upon reaching the login/payment information entry screen, which represents the final step immediately preceding purchase completion, the session is terminated here without proceeding with the actual transaction, in consideration of safety.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 고품질 Trajectory 기준 -->
+    <div class="sec">
+      <h2>고품질 Trajectory 를 위한 세 가지 기준</h2>
+
+      <!-- ① 관련성 -->
+      <div class="rule">
+        <div class="rule-head">
+          <div class="rule-num">1</div>
+          <div>
+            <div class="rule-title">Task 목표와 관련된 행동만 수행해야한다</div>
+            <div class="rule-body">
+              Task 에서 요구하는 사이트·정보 외 다른 곳으로 이동하지 마세요.
+            </div>
+          </div>
+        </div>
+        <div class="ex-stack">
+          <!-- <div class="ex good">
+            <div class="ex-twin">
+              <img class="ex-img-real" src="examples/dunkin_peach/0003_marked.jpg" alt="좋은 예시 — Amazon 정식 판매처 클릭">
+              <img class="ex-img-real" src="examples/dunkin_peach/0004_marked.jpg" alt="좋은 예시 — 맛 옵션 선택">
+            </div>
+            <div class="ex-cap">Task 가 요구하는 제품 페이지로 진입해 옵션을 선택하는 등 목표와 직접 관련된 Action 만을 수행함.</div>
+          </div> -->
+          <div class="ex bad">
+            <div class="ex-tag" style="font-size:13px; font-weight:800; margin-bottom:8px;">✕ Wrong</div>
+            <div class="ex-twin">
+              <img class="ex-img-real" src="examples/1_bad (1)_marked_mod.png" alt="나쁜 예시 — Instagram 링크 클릭">
+              <img class="ex-img-real" src="examples/1_bad (2).png" alt="나쁜 예시 — Instagram 페이지로 이동">
+            </div>
+            <div class="ex-cap">제품을 구매해야 함에도 검색 결과에서 Instagram 링크를 클릭해 <strong>Task 와 무관한 콘텐츠</strong>로 이동함.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② Thought 작성 -->
+      <div class="rule">
+        <!-- <div class="rule-head">
+          <div class="rule-num">2</div>
+          <div>
+            <div class="rule-title">Thought 은 구체적으로 작성해야한다</div>
+            <div class="rule-body">
+              Thought 는 <strong>"왜 이 행동을 했는지"</strong> 입니다. 아래 형식에 맞춰 한두 문장으로 작성해 주세요.<br>
+              지금 <strong>"무엇이"</strong> 보여서, <strong>"무엇을"</strong> 하려고, 이 <strong>"행동"</strong> 을 했다.
+            </div>
+          </div>
+        </div> -->
+        <div class="rule-head">
+          <div class="rule-num">2</div>
+          <div>
+            <div class="rule-title">Thought 는 구체적으로 작성해야 한다</div>
+            <div class="rule-body">
+              Thought 는 <strong>해당 행동을 한 이유</strong>를 의미합니다. 아래 형식에 맞춰 한두 문장으로 작성해 주세요.<br>
+              “[무엇이] 보여서, [무엇을] 하려고, [이 행동을] 했다.”
+            </div>
+          </div>
+        </div>
+
+        <div class="thought-ex">
+          <div class="thought-ex-img">
+            <img src="examples/dunkin_peach/0003_marked.jpg" alt="Step 3 화면 — Amazon 링크 클릭">
+          </div>
+          <div class="thought-ex-cards">
+            <div class="ex good">
+              <div class="ex-card-label">좋은 Thought</div>
+              <div class="ex-card-text">"To navigate to the Amazon product detail page for Dunkin' Refreshers Singles To Go, the corresponding product link is clicked from the search results list."</div>
+            </div>
+            <div class="ex bad">
+              <div class="ex-card-label">나쁜 Thought</div>
+              <div class="ex-card-text">"To solve the given task accurately"</div>
+              <div class="ex-card-reason">→ 너무 일반적이어서 아무 step 에나 맞는 내용임.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 안전성 -->
+      <div class="rule">
+        <div class="rule-head">
+          <div class="rule-num">3</div>
+          <div>
+            <div class="rule-title">실제 개인정보·결제 정보를 입력하지 않아야한다</div>
+            <div class="rule-body">
+              결제·로그인 화면에 도달하면 실명·이메일·카드 정보 등 <strong>실제 개인정보를 입력하지 말고 작업을 종료</strong>해 주세요.
+            </div>
+          </div>
+        </div>
+        <div class="ex-row ex-row-safety">
+          <div class="ex good">
+            <div class="ex-tag" style="font-size:13px; font-weight:800; margin-bottom:8px;">✓ Good</div>
+            <img class="ex-img-real" src="examples/example_good.png" alt="안전성 좋은 예시 — 실제 정보 입력 없이 종료">
+            <div class="ex-cap">실제 정보를 입력하지 않고 종료해 <strong>개인정보 노출과 실제 결제가 모두 발생하지 않음.</strong></div>
+          </div>
+          <div class="ex bad">
+            <div class="ex-tag" style="font-size:13px; font-weight:800; margin-bottom:8px;">✕ Wrong</div>
+            <img class="ex-img-real" src="examples/example_bad.png" alt="안전성 나쁜 예시 — 실제 정보 입력 후 진행">
+            <div class="ex-cap">실제 결제·로그인 정보를 입력해 <strong>개인정보 노출이 발생함.</strong></div>
+          </div>
+        </div>
+      </div>      
+    </div>
+
+    <!-- Page 1 nav -->
+    <div class="nav">
+      <button onclick="showPage(1)">
+        <small>다음 단계</small>
+        2. Trajectory 생성 연습하기
+      </button>
+    </div>
+  </div>
+  </div><!-- /page-1 -->
+
+
+  <!-- ══════════════ PAGE 2 ══════════════ -->
+  <div class="page-section" id="page-2">
+  <div class="main">
+    <h1>Trajectory 생성 연습하기</h1>
+    <p class="subtitle">실제 작업 전에 도구 사용 방법을 아래 흐름과 함께 익혀보세요.</p>
+
+    <!-- Step-by-step guide -->
+    <div class="sec">
+      <h2>Trajectory 생성 도구 사용 순서</h2>
+
+      <div class="practice-steps">
+
+        <!-- Step 0 -->
+        <div class="practice-step">
+          <div class="ps-line"></div>
+          <div class="ps-num" style="font-size:13px;">0</div>
+          <div class="ps-content">
+            <div class="ps-title">"탐색" 버튼을 눌러 Task를 파악합니다</div>
+            <p class="ps-desc">
+              <strong>탐색</strong> 버튼을 누르면 브라우저 창이 열립니다.
+              Task 해결에 필요한 사이트와 경로를 충분히 탐색한 후, 브라우저 창을 닫습니다.
+              이 단계는 기록되지 않으며, 본 작업을 시작하기 전 준비 단계입니다.
+            </p>
+            <div class="btn-img-placeholder">
+                <img src="examples/btn_section_before.png" alt="탐색 버튼 화면" style="width:100%; border-radius:8px; border:1px solid var(--border);">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="practice-step">
+          <div class="ps-line"></div>
+          <div class="ps-num">1</div>
+          <div class="ps-content">
+            <div class="ps-title">"시작" 버튼을 누르면 별도의 브라우저 창이 열립니다</div>
+            <p class="ps-desc">
+              <strong>시작</strong> 버튼을 누르면 잠시 후 <strong>별도의 브라우저 창</strong>이 열립니다.
+              이 창에서 수행하는 모든 행동이 Trajectory로 기록됩니다.
+            </p>
+            <div class="btn-img-placeholder">
+                <img src="examples/btn_section_after.png" alt="시작 버튼 활성화 화면" style="width:100%; border-radius:8px; border:1px solid var(--border);">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="practice-step">
+          <div class="ps-line"></div>
+          <div class="ps-num">2</div>
+          <div class="ps-content">
+            <div class="ps-title">열린 브라우저에서 Task를 수행합니다</div>
+            <p class="ps-desc">
+              열린 브라우저에서 Task의 목표를 달성하기 위한 행동(클릭, 타이핑, 스크롤 등)을 수행합니다.
+              각 행동의 <strong>Action</strong>과 행동 직전의 화면인 <strong>Observation</strong>은 <span class="ps-tag auto">자동 저장</span>됩니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 — Thought popup -->
+        <div class="practice-step">
+          <div class="ps-line"></div>
+          <div class="ps-num">3</div>
+          <div class="ps-content">
+            <div class="ps-title">각 행동마다 Thought 입력창이 활성화됩니다</div>
+            <p class="ps-desc">
+              행동을 수행하는 즉시 <strong>Thought 입력창</strong>이 활성화됩니다.
+              방금 수행한 행동의 이유를 <span class="ps-tag user">직접 작성</span>한 후, <strong>저장 후 계속</strong> 버튼을 눌러 다음 행동을 이어서 수행합니다.
+            </p>
+            <!-- Tool interface mockup — DevTools style -->
+            <div class="devtools-frame" style="margin-top:16px;">
+              <!-- Browser titlebar -->
+              <div class="tool-titlebar">
+                <div class="tool-dots">
+                  <div class="tool-dot red"></div>
+                  <div class="tool-dot yellow"></div>
+                  <div class="tool-dot green"></div>
+                </div>
+                <div class="tool-url-bar">https://www.amazon.com/dp/B0C3JLKX7Q</div>
+              </div>
+              <!-- Main body: screenshot + devtools panel -->
+              <div class="devtools-body">
+                <!-- Left: browser screenshot -->
+                <div class="devtools-screenshot">
+                  <img src="examples/dunkin_peach/0004_marked.jpg" alt="현재 화면">
+                  <div class="tool-screenshot-label">Observation (자동 저장)</div>
+                </div>
+                <!-- Right: DevTools-style panel -->
+                <div class="devtools-panel">
+                  <div class="devtools-panel-header">Trajectory Annotator</div>
+
+                  <div class="devtools-section">
+                    <div class="devtools-section-label action-label">Action</div>
+                    <div class="tool-panel-action">left_click (692, 622)</div>
+                  </div>
+
+                  <div class="devtools-section devtools-thought-section">
+                    <div class="devtools-section-label thought-label">Thought <span class="ps-tag user" style="margin-left:6px;">직접 작성</span></div>
+                    <textarea class="tool-panel-textarea" placeholder="예: To select the Task-specified flavor option, the Peach Passionfruit Lemonade option is clicked on the product detail page."></textarea>
+                    <div class="tool-panel-hint">💡 무엇이 보여서 → 무엇을 하려고 → 어떤 행동을 했다</div>
+                    <button class="devtools-save-btn">저장 후 계속</button>
+                  </div>
+
+                  <!-- <div class="devtools-divider">작업 완료 시 선택</div> -->
+
+                  <!-- <div class="devtools-outcome-btns">
+                    <button class="devtools-outcome success-btn">성공</button>
+                    <button class="devtools-outcome failure-btn">실패</button>
+                    <button class="devtools-outcome retry-btn">다시하기</button>
+                  </div> -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 — 마무리 선택
+        <div class="practice-step">
+          <div class="ps-num">4</div>
+          <div class="ps-content">
+            <div class="ps-title">작업이 끝나면 Trajectory 마무리 중 하나를 선택합니다</div>
+            <p class="ps-desc">Task 수행이 완료되면 아래 세 가지 중 해당하는 결과를 선택합니다.</p>
+
+            <div class="outcome-list">
+              <div class="outcome-row">
+                <div class="outcome-btn-slot">
+                  <button class="devtools-outcome success-btn" style="width:100%; padding:10px 0; font-size:13px;">성공</button>
+                </div>
+                <div class="outcome-info">
+                  <span class="outcome-label success">성공</span>
+                  <span class="outcome-row-desc">Task의 목표를 달성했을 때</span>
+                </div>
+              </div>
+              <div class="outcome-row">
+                <div class="outcome-btn-slot">
+                  <button class="devtools-outcome failure-btn" style="width:100%; padding:10px 0; font-size:13px;">실패</button>
+                </div>
+                <div class="outcome-info">
+                  <span class="outcome-label failure">실패</span>
+                  <span class="outcome-row-desc">Task의 목표를 달성할 수 없을 때 <span class="outcome-ex">(ex. Task가 꼭 특정 사이트를 요구하는데, 접속이 안되는 경우)</span></span>
+                </div>
+              </div>
+              <div class="outcome-row">
+                <div class="outcome-btn-slot">
+                  <button class="devtools-outcome retry-btn" style="width:100%; padding:10px 0; font-size:13px;">다시하기</button>
+                </div>
+                <div class="outcome-info">
+                  <span class="outcome-label retry">다시하기</span>
+                  <span class="outcome-row-desc">처음부터 다시해야 할 때 <span class="outcome-ex">(ex. Task 해결에 필요한 사이트가 잠시 접속이 안되는 경우)</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="repeat-note">
+              저장이 끝나면 다음 Task를 받아 반복하세요.
+            </div>
+          </div>
+        </div> -->
+        <!-- Step 4 — 브라우저 닫기 = terminate 자동 기록 -->
+          <div class="practice-step">
+            <!-- <div class="ps-line"></div> -->
+            <div class="ps-num">4</div>
+            <div class="ps-content">
+              <div class="ps-title">목표에 도달했다고 판단되면 브라우저 창을 닫고, 마지막 step의 결과와 이유를 작성합니다</div>
+              <p class="ps-desc">
+                더 이상 수행할 행동이 없고 <strong>목표에 도달했거나 종료가 적절하다고 판단</strong>되면 브라우저 창을 닫습니다.
+                창을 닫는 순간, <strong>마지막 step이 자동으로 <code style="font-family:ui-monospace,monospace;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:3px;">terminate</code> 행동으로 기록</strong>되며 완료 폼이 나타납니다.
+                여기서 고르는 <strong>결과(성공/실패/다시하기)가 마지막 step의 상태</strong>가 되고,
+                작성하는 <strong>이유가 해당 step의 Thought</strong>로 저장됩니다.
+                아래 세 가지 중 해당하는 결과를 선택하세요.
+              </p>
+
+              <div class="outcome-list">
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome success-btn" style="width:100%; padding:10px 0; font-size:13px;">성공</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label success">성공</span>
+                    <span class="outcome-row-desc">Task의 목표를 달성했을 때</span>
+                  </div>
+                </div>
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome failure-btn" style="width:100%; padding:10px 0; font-size:13px;">실패</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label failure">실패</span>
+                    <span class="outcome-row-desc">Task의 목표를 달성할 수 없을 때 <span class="outcome-ex">(ex. Task가 꼭 특정 사이트를 요구하는데, 접속이 안되는 경우)</span></span>
+                  </div>
+                </div>
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome retry-btn" style="width:100%; padding:10px 0; font-size:13px;">다시하기</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label retry">다시하기</span>
+                    <span class="outcome-row-desc">처음부터 다시해야 할 때 <span class="outcome-ex">(ex. Task 해결에 필요한 사이트가 잠시 접속이 안되는 경우)</span></span>
+                  </div>
+                </div>
+              </div>
+              <!-- 마지막 terminate step 미리보기
+              <div style="margin-top:12px; border:1px solid var(--border); border-radius:8px; background:white; padding:12px 14px; max-width:520px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                  <span style="background:var(--muted); color:white; padding:3px 10px; border-radius:999px; font-weight:700; font-size:12px;">마지막 Step</span>
+                  <span style="font-size:12px; color:var(--muted);">창을 닫으면 자동 생성</span>
+                </div>
+                <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Action <span style="color:var(--muted); font-weight:600;">(자동)</span></div>
+                <div class="tool-panel-action" style="margin-bottom:10px;">terminate (success)</div>
+                <div style="font-size:11px; font-weight:700; color:#7c3aed; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Thought <span class="ps-tag user" style="margin-left:4px;">직접 작성</span></div>
+                <div style="font-size:13px; color:#9ca3af; border:1px dashed #c4b5fd; border-radius:6px; padding:8px 10px; background:#f5f3ff;">→ 다음 단계(5)에서 이 화면에 작성합니다.</div>
+              </div> -->
+            </div>
+          </div>
+  
+          <!-- Step 5 — 마지막 terminate step의 결과 + Thought 작성 -->
+          <!-- <div class="practice-step">
+            <div class="ps-num">5</div>
+            <div class="ps-content">
+              <div class="ps-title">이 화면에서 마지막 terminate step의 결과와 이유를 작성합니다</div>
+              <p class="ps-desc">
+                브라우저를 닫으면 이 페이지에 완료 폼이 나타납니다.
+                여기서 고르는 <strong>결과(성공/실패/다시하기)가 마지막 terminate step의 status</strong>가 되고,
+                작성하는 <strong>이유가 그 terminate step의 Thought</strong>로 저장됩니다.
+                아래 세 가지 중 해당하는 결과를 선택하세요.
+              </p> -->
+  
+              <!-- <div class="outcome-list">
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome success-btn" style="width:100%; padding:10px 0; font-size:13px;">성공</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label success">성공</span>
+                    <span class="outcome-row-desc">Task의 목표를 달성했을 때</span>
+                  </div>
+                </div>
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome failure-btn" style="width:100%; padding:10px 0; font-size:13px;">실패</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label failure">실패</span>
+                    <span class="outcome-row-desc">Task의 목표를 달성할 수 없을 때 <span class="outcome-ex">(ex. Task가 꼭 특정 사이트를 요구하는데, 접속이 안되는 경우)</span></span>
+                  </div>
+                </div>
+                <div class="outcome-row">
+                  <div class="outcome-btn-slot">
+                    <button class="devtools-outcome retry-btn" style="width:100%; padding:10px 0; font-size:13px;">다시하기</button>
+                  </div>
+                  <div class="outcome-info">
+                    <span class="outcome-label retry">다시하기</span>
+                    <span class="outcome-row-desc">처음부터 다시해야 할 때 <span class="outcome-ex">(ex. Task 해결에 필요한 사이트가 잠시 접속이 안되는 경우)</span></span>
+                  </div>
+                </div>
+              </div> -->
+  
+              <!-- <div class="repeat-note">
+                저장이 끝나면 다음 Task를 받아 반복하세요.
+              </div>
+            </div> -->
+        <!-- </div> -->
+
+      </div><!-- /practice-steps -->
+    </div>
+
+    <!-- Divider -->
+    <div style="display:flex; align-items:center; gap:16px; margin:8px 0 32px;">
+      <div style="flex:1; height:1px; background:var(--border);"></div>
+      <span style="font-size:14px; font-weight:700; color:var(--muted); white-space:nowrap; letter-spacing:0.5px;">지금부터 연습을 시작합니다</span>
+      <div style="flex:1; height:1px; background:var(--border);"></div>
+    </div>
+
+    <!-- Practice task -->
+    <div class="task-card">
+      <div class="task-card-icon">📋</div>
+      <div>
+        <div class="task-card-label">연습 Task</div>
+        <div class="task-card-text">Purchase Dunkin' Zero Sugar Refreshers SINGLES TO GO in Peach Passionfruit Lemonade Flavor.</div>
+      </div>
+    </div>
+    <!-- 탐색 / 시작 버튼 영역 (연습) -->
+    <div class="work-action-row">
+      <div class="work-action-item">
+        <button class="work-btn explore-btn" id="pExploreBtn" onclick="onPracticeExplore()">탐색</button>
+        <p class="work-action-desc">Task 해결에 필요한 사이트와 경로를 미리 둘러봅니다. 이 단계는 기록되지 않습니다.</p>
+      </div>
+      <div class="work-action-item">
+        <button class="work-btn start-btn" id="practiceBtn" onclick="onPractice()" disabled>시작</button>
+        <p class="work-action-desc">탐색이 끝나면 시작 버튼을 누릅니다. 별도의 브라우저 창이 열리며 연습 기록이 시작됩니다.</p>
+      </div>
+    </div>
+    <div id="practiceStatus" class="repeat-note" style="display:none;"></div>
+
+    <div class="nav" style="justify-content:space-between; margin-top:24px;">
+      <button onclick="showPage(0)" style="background:#e5e7eb; color:#374151;">
+        <small>이전 단계</small>
+        1. Trajectory 이해하기
+      </button>
+      <button onclick="showPage(2)">
+        <small>다음 단계</small>
+        3. Trajectory 생성하기
+      </button>
+    </div>
+  </div>
+  </div><!-- /page-2 -->
+
+
+  <!-- ══════════════ PAGE 3 ══════════════ -->
+  <div class="page-section" id="page-3">
+  <div class="main">
+    <h1>Trajectory 생성하기</h1>
+    <p class="subtitle">주어진 Task를 수행하고 Trajectory를 완성하세요.</p>
+
+    <!-- Assigned task -->
+    <div class="task-card">
+      <div class="task-card-icon">📋</div>
+      <div>
+        <div class="task-card-label">작업 Task</div>
+        <div class="task-card-text" id="assignedTaskText">Task를 불러오는 중...</div>
+      </div>
+    </div>
+
+    <!-- 탐색 / 시작 버튼 영역 -->
+    <div class="work-action-row">
+      <div class="work-action-item">
+        <button class="work-btn explore-btn" id="exploreBtn" onclick="onExplore()">탐색</button>
+        <p class="work-action-desc">Task 해결에 필요한 사이트와 경로를 미리 탐색합니다. 이 단계는 기록되지 않습니다.</p>
+      </div>
+      <div class="work-action-item">
+        <button class="work-btn start-btn" id="startBtn" disabled>시작</button>
+        <p class="work-action-desc">탐색이 끝나면 시작 버튼을 누릅니다. 별도의 브라우저 창이 열리며 기록이 시작됩니다.</p>
+      </div>
+    </div>
+
+    <!-- webtracker 연동 상태 표시 -->
+    <div id="trackStatus" class="repeat-note" style="display:none;"></div>
+
+    <div class="nav" style="justify-content:flex-start; margin-top:16px;">
+      <button onclick="showPage(1)" style="background:#e5e7eb; color:#374151;">
+        <small>이전 단계</small>
+        2. Trajectory 생성 연습하기
+      </button>
+    </div>
+  </div>
+  </div><!-- /page-3 -->
+
+  <!-- 공유 영역: 작업 종료 후 완료 폼 + 저장된 Task 목록 (2·3페이지에서 페이지 버튼 위로 이동) -->
+  <div id="afterPanel" style="display:none; border-top:1px solid var(--border); margin-top:8px; padding-top:20px;">
+
+    <!-- 작업 종료(창 닫음) 후: 결과 선택 + 완료 이유 작성 -->
+    <div id="finalizeForm" class="submit-section" style="display:none; flex-direction:column; align-items:stretch; gap:14px; margin-bottom:28px;">
+      <div>
+        <strong style="font-size:16px; color:var(--good); display:block; margin-bottom:4px;">작업을 마치셨나요?</strong>
+        <span style="font-size:14px; color:#374151;">결과를 선택하고, 그렇게 판단한 이유를 작성한 뒤 저장하세요.</span>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="devtools-outcome success-btn" data-status="success" style="flex:1; padding:13px 0; font-size:14px;">성공</button>
+        <button class="devtools-outcome failure-btn" data-status="fail" style="flex:1; padding:13px 0; font-size:14px;">실패</button>
+        <button class="devtools-outcome retry-btn" data-status="retry" style="flex:1; padding:13px 0; font-size:14px;">다시하기</button>
+      </div>
+      <textarea id="finalizeReason" class="tool-panel-textarea" placeholder="이 결과로 판단한 이유를 작성하세요. (예: 결제 직전 로그인 화면까지 도달하여 목표를 달성했다.)"></textarea>
+      <button id="finalizeSubmit" class="submit-btn" style="width:100%;">완료 저장</button>
+    </div>
+    <div id="finalizeMsg" style="font-size:14px; color:var(--danger); margin-bottom:16px;"></div>
+
+    <!-- 저장된 Task 목록 (각 항목 클릭 시 thought 펼침) — 3페이지에서만 표시 -->
+    <div id="savedListSection">
+      <h2 style="font-size:18px; border-bottom:2px solid var(--border); padding-bottom:8px; margin:0 0 12px;">저장된 Task 목록</h2>
+      <div id="savedList" style="font-size:14px; color:var(--muted);">불러오는 중...</div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  /* ─────────── webtracker 연동 (server.py, http://localhost:5000) ───────────
+     3페이지 "시작" 버튼이 server.py 의 POST /start 를 호출해 실제 webtracker
+     (Playwright 브라우저 + 인페이지 생각 패널)를 띄웁니다. server.py 가 실행
+     중이어야 하며, 다른 출처에서 호출하므로 server.py 에 CORS 가 켜져 있어야
+     합니다. */
+  const TRACKER_SERVER = "http://localhost:5000";
+  const USER_KEY = "webtracker_user";
+  let assignedTaskId = null;
+  let trackPollTimer = null;
+
+  function getUser() {
+    let u = localStorage.getItem(USER_KEY);
+    if (!u) {
+      u = (window.prompt("작업자 이름(ID)을 입력하세요:", "") || "").trim();
+      if (u) localStorage.setItem(USER_KEY, u);
+    }
+    return u;
+  }
+  function tUrl(path) {
+    const sep = path.includes("?") ? "&" : "?";
+    return TRACKER_SERVER + path + sep + "user=" + encodeURIComponent(getUser() || "");
+  }
+  function trackMsg(text, show = true) {
+    const el = document.getElementById("trackStatus");
+    if (el) { el.textContent = text; el.style.display = show ? "block" : "none"; }
+  }
+  function resetStartBtn() {
+    const b = document.getElementById("startBtn");
+    if (b) { b.disabled = false; b.classList.add("active"); b.textContent = "시작"; }
+  }
+  // 다음 Task를 위해 page-3 탐색/시작 버튼을 초기 상태(탐색 필요 → 시작 잠금)로 되돌린다.
+  function resetWorkButtons() {
+    const eb = document.getElementById("exploreBtn");
+    if (eb) eb.classList.remove("done");
+    const sb = document.getElementById("startBtn");
+    if (sb) { sb.classList.remove("active"); sb.disabled = true; sb.textContent = "시작"; }
+  }
+
+  async function loadAssignedTask() {
+    const el = document.getElementById("assignedTaskText");
+    if (!getUser()) { if (el) el.textContent = "작업자 이름을 입력하면 Task가 표시됩니다."; return; }
+    try {
+      const res = await fetch(tUrl("/current-task"));
+      const data = await res.json();
+      if (res.ok && data.task) {
+        assignedTaskId = (typeof data.task.id === "number") ? data.task.id : null;
+        if (el) el.textContent = data.task.task || "(할당된 Task 없음)";
+      } else if (el) {
+        el.textContent = "Task를 불러오지 못했습니다: " + (data.error || res.status);
+      }
+    } catch (e) {
+      if (el) el.textContent = "서버에 연결할 수 없습니다 — server.py(localhost:5000)를 실행하세요.";
+    }
+  }
+
+  // 서버는 /next-task 를 POST 해야만 current_index 가 다음 Task 로 넘어간다.
+  // (완료/기록종료는 completed_ids 에 추가만 하고 인덱스를 옮기지 않음)
+  async function loadNextTask() {
+    const el = document.getElementById("assignedTaskText");
+    if (!getUser()) { if (el) el.textContent = "작업자 이름을 입력하면 Task가 표시됩니다."; return; }
+    if (el) el.textContent = "다음 Task를 불러오는 중...";
+    try {
+      const res = await fetch(tUrl("/next-task"), { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.task) {
+        assignedTaskId = (typeof data.task.id === "number") ? data.task.id : null;
+        if (el) el.textContent = data.task.task || "(할당된 Task 없음)";
+      } else if (el) {
+        el.textContent = "다음 Task를 불러오지 못했습니다: " + (data.error || res.status);
+      }
+    } catch (e) {
+      if (el) el.textContent = "서버에 연결할 수 없습니다 — server.py(localhost:5000)를 실행하세요.";
+    }
+  }
+
+  async function pollTrackStatus() {
+    try {
+      const res = await fetch(tUrl("/status"));
+      const data = await res.json();
+      if (res.ok && data.status === "tracking") {
+        trackMsg("● 기록 중 — 열린 브라우저 창에서 작업을 수행하세요. 각 행동마다 생각을 적고, 작업이 끝나면 그 창을 닫으세요.");
+        trackPollTimer = setTimeout(pollTrackStatus, 1000);
+      } else if (res.ok && data.status === "done") {
+        trackMsg("창이 닫혔습니다. 아래에서 결과를 선택하고 완료 이유를 작성해 마무리하세요.");
+        showFinalize();
+        resetStartBtn();
+      } else {
+        trackMsg("✓ 기록이 종료되었습니다. 다음 Task를 받아 반복하세요.");
+        resetStartBtn();
+      }
+    } catch (e) {
+      trackPollTimer = setTimeout(pollTrackStatus, 1500);
+    }
+  }
+
+  /* ───────── 작업 종료 후: 결과(성공/실패/다시하기) + 이유 → /finalize ───────── */
+  let finalizeStatus = null;
+  function moveAfterPanelAboveNav() {
+    // 완료 폼·저장 목록을 현재 활성 페이지의 네비게이션 버튼 위로 옮긴다.
+    const ap = document.getElementById("afterPanel");
+    if (!ap) return;
+    const nav = document.querySelector('.page-section.active .nav');
+    if (nav && nav.parentNode) nav.parentNode.insertBefore(ap, nav);
+  }
+  function updateSavedListVisibility() {
+    // 저장된 Task 목록은 3페이지에서만 보인다 (연습 2페이지에서는 숨김).
+    const onPage3 = document.getElementById('page-3').classList.contains('active');
+    const sls = document.getElementById("savedListSection");
+    if (sls) sls.style.display = onPage3 ? "block" : "none";
+    if (onPage3) loadSavedList();
+  }
+  function showFinalize() {
+    moveAfterPanelAboveNav();
+    const ap = document.getElementById("afterPanel");
+    if (ap) ap.style.display = "block";
+    const f = document.getElementById("finalizeForm");
+    if (f) f.style.display = "flex";
+    const msg = document.getElementById("finalizeMsg");
+    if (msg) msg.textContent = "";
+    updateSavedListVisibility();
+  }
+  function selectOutcome(btn) {
+    finalizeStatus = btn.dataset.status;
+    document.querySelectorAll("#finalizeForm button[data-status]").forEach(function (x) {
+      x.style.outline = (x === btn) ? "3px solid #1f2937" : "none";
+      x.style.outlineOffset = "1px";
+    });
+    document.getElementById("finalizeMsg").textContent = "";
+  }
+  async function onFinalizeSubmit() {
+    const msg = document.getElementById("finalizeMsg");
+    msg.style.color = "var(--danger)";
+    if (!finalizeStatus) { msg.textContent = "결과(성공/실패/다시하기)를 먼저 선택하세요."; return; }
+    const reason = (document.getElementById("finalizeReason").value || "").trim();
+    if (!reason) { msg.textContent = "완료 이유를 작성해 주세요."; return; }
+    const sub = document.getElementById("finalizeSubmit");
+    sub.disabled = true; sub.textContent = "저장 중...";
+    try {
+      const res = await fetch(tUrl("/finalize"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: finalizeStatus, reason: reason }),
+      });
+      const data = await res.json();
+      if (!res.ok) { msg.textContent = "❌ " + (data.error || "저장 실패"); sub.disabled = false; sub.textContent = "완료 저장"; return; }
+      document.getElementById("finalizeForm").style.display = "none";
+      document.getElementById("finalizeReason").value = "";
+      document.querySelectorAll("#finalizeForm button[data-status]").forEach(function (x) { x.style.outline = "none"; });
+      finalizeStatus = null;
+      sub.disabled = false; sub.textContent = "완료 저장";
+      msg.style.color = "#16a34a";
+      if (data.practice) {
+        msg.textContent = "✓ 연습을 마쳤습니다. (연습 기록은 저장되지 않습니다)";
+      } else {
+        msg.textContent = "✓ 저장되었습니다. 다음 Task를 불러옵니다.";
+        // 다음 Task로 넘어가기: 완료 폼만 닫고(afterPanel·저장목록은 유지),
+        // 탐색/시작 버튼을 초기화한 뒤 /next-task 로 새 Task를 받아온다.
+        resetWorkButtons();
+        trackMsg("", false);
+        loadNextTask();   // /next-task 로 서버 인덱스를 다음 Task로 진행
+      }
+      updateSavedListVisibility();   // 3페이지에서만 저장 목록 갱신 (연습 2페이지는 숨김)
+    } catch (e) {
+      msg.textContent = "❌ 서버 연결 실패 — server.py 실행을 확인하세요.";
+      sub.disabled = false; sub.textContent = "완료 저장";
+    }
+  }
+
+  /* ───────── 저장된 Task 목록 (thought 포함) ───────── */
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[c];
+    });
+  }
+  function actionStr(a) {
+    if (!a || typeof a !== "object") return String(a == null ? "" : a);
+    var t = a.action;
+    if (t === "left_click") return "left_click " + JSON.stringify(a.coordinate || []);
+    if (t === "type")       return 'type "' + (a.text || "") + '"';
+    if (t === "search")     return 'search "' + (a.text || "") + '"';
+    if (t === "scroll")     return "scroll " + (a.pixels || 0) + "px";
+    if (t === "key")        return "key " + (a.keys || []).join(" + ");
+    if (t === "terminate")  return "terminate (" + (a.status || "") + ")";
+    return t || JSON.stringify(a);
+  }
+  function outcomeBadge(o) {
+    var map = { success:["성공","#16a34a","#dcfce7"], fail:["실패","#dc2626","#fee2e2"], retry:["다시하기","#92400e","#fef3c7"] };
+    var m = map[o];
+    if (!m) return '<span style="font-size:11px;color:#9ca3af;border:1px solid #e5e7eb;border-radius:10px;padding:2px 8px;">미완료</span>';
+    return '<span style="font-size:11px;font-weight:700;color:' + m[1] + ';background:' + m[2] + ';border-radius:10px;padding:2px 9px;">' + m[0] + '</span>';
+  }
+  async function loadSavedList() {
+    var el = document.getElementById("savedList");
+    if (!el) return;
+    if (!getUser()) { el.textContent = "작업자 이름을 입력하면 목록이 표시됩니다."; return; }
+    try {
+      var res = await fetch(tUrl("/sessions"));
+      var data = await res.json();
+      var ss = (data.sessions || []).filter(function (s) { return s.steps > 0 && !s.practice; });
+      if (!ss.length) { el.innerHTML = '<div style="color:#9ca3af;">아직 저장된 Task가 없습니다.</div>'; return; }
+      el.innerHTML = ss.map(function (s, i) {
+        var tag = s.practice ? '<span style="font-size:11px;color:#6d28d9;background:#ede9fe;border-radius:10px;padding:2px 8px;">연습</span>' : "";
+        return '<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:white;">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            outcomeBadge(s.outcome) + tag +
+            '<span style="font-weight:600;color:var(--fg);flex:1;min-width:200px;">' + escapeHtml(s.task || "(제목 없음)") + '</span>' +
+            '<span style="color:var(--muted);font-size:12px;">' + s.steps + ' steps</span>' +
+            '<button data-sname="' + escapeHtml(s.name) + '" data-cid="th' + i + '" style="border:1px solid var(--border);background:#f3f4f6;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;">생각 보기</button>' +
+          '</div>' +
+          (s.outcome_reason ? '<div style="font-size:13px;color:#374151;margin-top:6px;"><b>완료 이유:</b> ' + escapeHtml(s.outcome_reason) + '</div>' : '') +
+          '<div id="th' + i + '" style="display:none;margin-top:10px;"></div>' +
+        '</div>';
+      }).join("");
+      el.querySelectorAll("button[data-sname]").forEach(function (b) {
+        b.addEventListener("click", function () { toggleThoughts(b.dataset.sname, b.dataset.cid); });
+      });
+    } catch (e) {
+      el.textContent = "목록을 불러오지 못했습니다 — server.py(localhost:5000) 실행을 확인하세요.";
+    }
+  }
+  async function toggleThoughts(sname, cid) {
+    var c = document.getElementById(cid);
+    if (!c) return;
+    if (c.style.display === "block") { c.style.display = "none"; return; }
+    c.style.display = "block";
+    if (c.dataset.loaded) return;
+    c.innerHTML = "불러오는 중...";
+    try {
+      var res = await fetch(tUrl("/session/" + encodeURIComponent(sname) + "/trajectory"));
+      var data = await res.json();
+      var steps = data.steps || [];
+      c.innerHTML = steps.map(function (st, i) {
+        var th = (st.thought || "").trim();
+        return '<div style="border-left:3px solid #ddd6fe;padding:4px 10px;margin:6px 0;">' +
+          '<div style="font-family:ui-monospace,monospace;font-size:12px;color:#374151;">' + (i + 1) + '. ' + escapeHtml(actionStr(st.action)) + '</div>' +
+          '<div style="font-size:13px;color:' + (th ? "#1f2937" : "#9ca3af") + ';">' + (th ? escapeHtml(th) : "(생각 없음)") + '</div>' +
+        '</div>';
+      }).join("") || "(스텝 없음)";
+      c.dataset.loaded = "1";
+    } catch (e) { c.innerHTML = "불러오기 실패"; }
+  }
+
+  async function onStart() {
+    const b = document.getElementById("startBtn");
+    if (!b || b.disabled) return;
+    if (!getUser()) return;
+    b.disabled = true; b.textContent = "여는 중...";
+    trackMsg("브라우저 창을 여는 중...");
+    try {
+      const res = await fetch(tUrl("/start"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ practice: false, task_id: assignedTaskId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        trackMsg("❌ " + (data.error || "시작 실패"));
+        b.disabled = false; b.textContent = "시작";
+        return;
+      }
+      b.textContent = "기록 중...";
+      pollTrackStatus();
+    } catch (e) {
+      trackMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
+      b.disabled = false; b.textContent = "시작";
+    }
+  }
+
+  // 탐색: 기록하지 않는 순수 Chromium 창을 띄움 (server.py /explore)
+  async function onExplore() {
+    if (!getUser()) return;
+    document.getElementById('exploreBtn').classList.add('done');
+    const startBtn = document.getElementById('startBtn');
+    startBtn.classList.add('active');
+    startBtn.disabled = false;
+    trackMsg("탐색용 브라우저를 여는 중...");
+    try {
+      const res = await fetch(tUrl("/explore"), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { trackMsg("❌ " + (data.error || "탐색 실패")); return; }
+      trackMsg("탐색 브라우저가 열렸습니다. 자유롭게 둘러본 뒤 창을 닫고 '시작'을 누르세요. (탐색은 기록되지 않습니다)");
+    } catch (e) {
+      trackMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
+    }
+  }
+
+  /* ───────── 연습하기 (2페이지): 탐색(plain) → 시작(기록 + 생각 패널) ───────── */
+  function pMsg(text) {
+    const el = document.getElementById("practiceStatus");
+    if (el) { el.textContent = text; el.style.display = "block"; }
+  }
+  function resetPracticeBtn() {
+    const b = document.getElementById("practiceBtn");
+    if (b) { b.disabled = false; b.classList.add("active"); b.textContent = "시작"; }
+  }
+  // 연습 탐색: 기록하지 않는 순수 Chromium 창 (page 3 탐색과 동일한 /explore)
+  async function onPracticeExplore() {
+    if (!getUser()) return;
+    document.getElementById('pExploreBtn').classList.add('done');
+    const sb = document.getElementById('practiceBtn');
+    sb.classList.add('active');
+    sb.disabled = false;
+    pMsg("탐색용 브라우저를 여는 중...");
+    try {
+      const res = await fetch(tUrl("/explore"), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) { pMsg("❌ " + (data.error || "탐색 실패")); return; }
+      pMsg("탐색 브라우저가 열렸습니다. 자유롭게 둘러본 뒤 창을 닫고 '시작'을 누르세요. (탐색은 기록되지 않습니다)");
+    } catch (e) {
+      pMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
+    }
+  }
+  async function onPractice() {
+    const b = document.getElementById("practiceBtn");
+    if (!b || b.disabled) return;
+    if (!getUser()) return;
+    b.disabled = true; b.textContent = "여는 중...";
+    pMsg("연습용 브라우저 창을 여는 중...");
+    try {
+      const res = await fetch(tUrl("/start"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ practice: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) { pMsg("❌ " + (data.error || "연습 시작 실패")); resetPracticeBtn(); return; }
+      b.textContent = "연습 기록 중...";
+      pPollStatus();
+    } catch (e) {
+      pMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
+      resetPracticeBtn();
+    }
+  }
+  async function pPollStatus() {
+    try {
+      const res = await fetch(tUrl("/status"));
+      const data = await res.json();
+      if (res.ok && data.status === "tracking") {
+        pMsg("● 연습 기록 중 — 브라우저에서 작업하고 각 행동마다 생각을 적으세요. 끝나면 패널의 '작업 종료'.");
+        setTimeout(pPollStatus, 1000);
+      } else if (res.ok && data.status === "done") {
+        pMsg("연습 창이 닫혔습니다. 결과를 선택하고 완료 이유를 작성해 마무리하세요. (연습 기록은 저장되지 않습니다)");
+        showFinalize();
+        resetPracticeBtn();
+      } else {
+        pMsg("✓ 연습이 종료되었습니다.");
+        resetPracticeBtn();
+      }
+    } catch (e) { setTimeout(pPollStatus, 1500); }
+  }
+
+  function showPage(idx) {
+    document.querySelectorAll('.page-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+    document.querySelectorAll('.page-section').forEach((s, i) => s.classList.toggle('active', i === idx));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const ap = document.getElementById("afterPanel");
+    if (ap) {
+      if (idx === 2) {
+        moveAfterPanelAboveNav();   // 3페이지: 저장 목록을 페이지 버튼 위에 표시
+        ap.style.display = "block";
+      } else {
+        // 1·2페이지: 평소엔 숨기고, 연습 종료 후 showFinalize()에서만 완료 폼을 띄움
+        ap.style.display = "none";
+      }
+    }
+    if (idx === 2) { loadAssignedTask(); updateSavedListVisibility(); }   // 3페이지 진입
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const b = document.getElementById("startBtn");
+    if (b) b.addEventListener("click", onStart);
+    // wire the finalize form (결과 선택 + 완료 저장)
+    document.querySelectorAll("#finalizeForm button[data-status]").forEach(function (btn) {
+      btn.addEventListener("click", function () { selectOutcome(btn); });
+    });
+    const fsub = document.getElementById("finalizeSubmit");
+    if (fsub) fsub.addEventListener("click", onFinalizeSubmit);
+    if (document.getElementById("page-3").classList.contains("active")) loadAssignedTask();
+  });
+</script>
+
+</body>
+</html>
