@@ -1236,7 +1236,7 @@
   }
   .practice-start-btn:hover { background: #15803d; }
 
-  /* Page 3 — 탐색/시작 버튼 행 */
+  /* Page 3 — 시작 버튼 행 */
   .work-action-row {
     display: flex;
     align-items: flex-start;
@@ -1558,23 +1558,6 @@
 
       <div class="practice-steps">
 
-        <!-- Step 0 -->
-        <div class="practice-step">
-          <div class="ps-line"></div>
-          <div class="ps-num" style="font-size:13px;">0</div>
-          <div class="ps-content">
-            <div class="ps-title">"탐색" 버튼을 눌러 Task를 파악합니다</div>
-            <p class="ps-desc">
-              <strong>탐색</strong> 버튼을 누르면 브라우저 창이 열립니다.
-              Task 해결에 필요한 사이트와 경로를 충분히 탐색한 후, 브라우저 창을 닫습니다.
-              이 단계는 기록되지 않으며, 본 작업을 시작하기 전 준비 단계입니다.
-            </p>
-            <div class="btn-img-placeholder">
-                <img src="examples/btn_section_before.png" alt="탐색 버튼 화면" style="width:100%; border-radius:8px; border:1px solid var(--border);">
-            </div>
-          </div>
-        </div>
-
         <!-- Step 1 -->
         <div class="practice-step">
           <div class="ps-line"></div>
@@ -1826,15 +1809,11 @@
         <div class="task-card-text">Purchase Dunkin' Zero Sugar Refreshers SINGLES TO GO in Peach Passionfruit Lemonade Flavor.</div>
       </div>
     </div>
-    <!-- 탐색 / 시작 버튼 영역 (연습) -->
+    <!-- 시작 버튼 영역 (연습) -->
     <div class="work-action-row">
       <div class="work-action-item">
-        <button class="work-btn explore-btn" id="pExploreBtn" onclick="onPracticeExplore()">탐색</button>
-        <p class="work-action-desc">Task 해결에 필요한 사이트와 경로를 미리 둘러봅니다. 이 단계는 기록되지 않습니다.</p>
-      </div>
-      <div class="work-action-item">
-        <button class="work-btn start-btn" id="practiceBtn" onclick="onPractice()" disabled>시작</button>
-        <p class="work-action-desc">탐색이 끝나면 시작 버튼을 누릅니다. 별도의 브라우저 창이 열리며 연습 기록이 시작됩니다.</p>
+        <button class="work-btn start-btn active" id="practiceBtn" onclick="onPractice()">시작</button>
+        <p class="work-action-desc">시작 버튼을 누르면 별도의 브라우저 창이 열리며 연습 기록이 시작됩니다.</p>
       </div>
     </div>
     <div id="practiceStatus" class="repeat-note" style="display:none;"></div>
@@ -1868,15 +1847,11 @@
       </div>
     </div>
 
-    <!-- 탐색 / 시작 버튼 영역 -->
+    <!-- 시작 버튼 영역 -->
     <div class="work-action-row">
       <div class="work-action-item">
-        <button class="work-btn explore-btn" id="exploreBtn" onclick="onExplore()">탐색</button>
-        <p class="work-action-desc">Task 해결에 필요한 사이트와 경로를 미리 탐색합니다. 이 단계는 기록되지 않습니다.</p>
-      </div>
-      <div class="work-action-item">
-        <button class="work-btn start-btn" id="startBtn" disabled>시작</button>
-        <p class="work-action-desc">탐색이 끝나면 시작 버튼을 누릅니다. 별도의 브라우저 창이 열리며 기록이 시작됩니다.</p>
+        <button class="work-btn start-btn active" id="startBtn">시작</button>
+        <p class="work-action-desc">시작 버튼을 누르면 별도의 브라우저 창이 열리며 기록이 시작됩니다.</p>
       </div>
     </div>
 
@@ -1951,12 +1926,10 @@
     const b = document.getElementById("startBtn");
     if (b) { b.disabled = false; b.classList.add("active"); b.textContent = "시작"; }
   }
-  // 다음 Task를 위해 page-3 탐색/시작 버튼을 초기 상태(탐색 필요 → 시작 잠금)로 되돌린다.
+  // 다음 Task를 위해 page-3 시작 버튼을 다시 누를 수 있는 상태로 되돌린다.
   function resetWorkButtons() {
-    const eb = document.getElementById("exploreBtn");
-    if (eb) eb.classList.remove("done");
     const sb = document.getElementById("startBtn");
-    if (sb) { sb.classList.remove("active"); sb.disabled = true; sb.textContent = "시작"; }
+    if (sb) { sb.classList.add("active"); sb.disabled = false; sb.textContent = "시작"; }
   }
 
   async function loadAssignedTask() {
@@ -2077,7 +2050,7 @@
       } else {
         msg.textContent = "✓ 저장되었습니다. 다음 Task를 불러옵니다.";
         // 다음 Task로 넘어가기: 완료 폼만 닫고(afterPanel·저장목록은 유지),
-        // 탐색/시작 버튼을 초기화한 뒤 /next-task 로 새 Task를 받아온다.
+        // 시작 버튼을 초기화한 뒤 /next-task 로 새 Task를 받아온다.
         resetWorkButtons();
         trackMsg("", false);
         loadNextTask();   // /next-task 로 서버 인덱스를 다음 Task로 진행
@@ -2189,25 +2162,7 @@
     }
   }
 
-  // 탐색: 기록하지 않는 순수 Chromium 창을 띄움 (server.py /explore)
-  async function onExplore() {
-    if (!getUser()) return;
-    document.getElementById('exploreBtn').classList.add('done');
-    const startBtn = document.getElementById('startBtn');
-    startBtn.classList.add('active');
-    startBtn.disabled = false;
-    trackMsg("탐색용 브라우저를 여는 중...");
-    try {
-      const res = await fetch(tUrl("/explore"), { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) { trackMsg("❌ " + (data.error || "탐색 실패")); return; }
-      trackMsg("탐색 브라우저가 열렸습니다. 자유롭게 둘러본 뒤 창을 닫고 '시작'을 누르세요. (탐색은 기록되지 않습니다)");
-    } catch (e) {
-      trackMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
-    }
-  }
-
-  /* ───────── 연습하기 (2페이지): 탐색(plain) → 시작(기록 + 생각 패널) ───────── */
+  /* ───────── 연습하기 (2페이지): 시작(기록 + 생각 패널) ───────── */
   function pMsg(text) {
     const el = document.getElementById("practiceStatus");
     if (el) { el.textContent = text; el.style.display = "block"; }
@@ -2215,23 +2170,6 @@
   function resetPracticeBtn() {
     const b = document.getElementById("practiceBtn");
     if (b) { b.disabled = false; b.classList.add("active"); b.textContent = "시작"; }
-  }
-  // 연습 탐색: 기록하지 않는 순수 Chromium 창 (page 3 탐색과 동일한 /explore)
-  async function onPracticeExplore() {
-    if (!getUser()) return;
-    document.getElementById('pExploreBtn').classList.add('done');
-    const sb = document.getElementById('practiceBtn');
-    sb.classList.add('active');
-    sb.disabled = false;
-    pMsg("탐색용 브라우저를 여는 중...");
-    try {
-      const res = await fetch(tUrl("/explore"), { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) { pMsg("❌ " + (data.error || "탐색 실패")); return; }
-      pMsg("탐색 브라우저가 열렸습니다. 자유롭게 둘러본 뒤 창을 닫고 '시작'을 누르세요. (탐색은 기록되지 않습니다)");
-    } catch (e) {
-      pMsg("❌ 서버 연결 실패 — server.py가 localhost:5000 에서 실행 중인지 확인하세요.");
-    }
   }
   async function onPractice() {
     const b = document.getElementById("practiceBtn");

@@ -18,13 +18,22 @@ except Exception:
     InPagePanel = None
 
 
-VIEWPORT_W = 1440
-VIEWPORT_H = 900
+# Matches Fara-7B's screen resolution exactly (its system prompt states
+# "1428x896"). Both are multiples of 28 — the patch size Qwen2.5-VL (Fara's
+# base) tiles images at — so click coordinates land in the same absolute pixel
+# space Fara was trained on.
+VIEWPORT_W = 1428
+VIEWPORT_H = 896
 USER_DATA_SUBDIR = "browser_profile"
 
 # Leave room for the Windows taskbar and the --app mode title bar.
 SCREEN_RESERVE_W = 20
 SCREEN_RESERVE_H = 100
+
+# Height (px) of the floating nav toolbar strip parked ABOVE the browser. The
+# browser window is pushed down by this much and the viewport is shrunk to fit,
+# so the toolbar never overlaps the page. See nav_toolbar.py.
+NAV_BAR_H = 46
 
 # NOTE: the thought panel AND the page lock both live in inject.js now (the card
 # is an in-page overlay; window.__webtrack_setlock toggles the dim+block). One
@@ -45,18 +54,90 @@ def _screen_size():
         return 1920, 1080
 
 
-def _detect_scale_factor(reserve_w=0):
-    """Return a device-scale factor in (0, 1.0] that lets a 1440x900 CSS
+def _detect_scale_factor(reserve_w=0, reserve_h=0):
+    """Return a device-scale factor in (0, 1.0] that lets a 1428x896 CSS
     viewport fit within the user's primary monitor, optionally leaving
-    `reserve_w` px free on the right for the docked thought panel. Windows-
-    only. Caps at 1.0 — never up-scales on large displays.
+    `reserve_w` px free on the right and `reserve_h` px free on top (for the
+    floating nav toolbar). Windows-only. Caps at 1.0 — never up-scales on large
+    displays.
 
-    NOTE: only the *display* scale shrinks; the CSS viewport stays 1440x900,
-    so click coordinates remain in 0-1440 / 0-900 regardless of the panel."""
+    NOTE: only the *display* scale shrinks; the CSS viewport stays 1428x896,
+    so click coordinates remain in 0-1428 / 0-896 regardless of the panel."""
     sw, sh = _screen_size()
     usable_w = max(sw - SCREEN_RESERVE_W - reserve_w, 800)
-    usable_h = max(sh - SCREEN_RESERVE_H, 600)
+    usable_h = max(sh - SCREEN_RESERVE_H - reserve_h, 600)
     return min(usable_w / VIEWPORT_W, usable_h / VIEWPORT_H, 1.0)
+
+
+def _make_window_unresizable(expect_left, expect_top, expect_w, expect_h, tol=24):
+    """Strip the resize border (WS_THICKFRAME) and the maximize box from the
+    tracked Chromium --app window so the worker physically cannot drag-resize it
+    (a resize would distort the fixed 1428x896 screenshots). Windows-only,
+    best-effort.
+
+    The window is matched by class + geometry against the bounds Chromium
+    reports, so the worker's OTHER normal Chrome windows are never touched.
+    Returns True if a window was found and locked."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+    except Exception:
+        return False
+
+    GWL_STYLE = -16
+    WS_THICKFRAME = 0x00040000
+    WS_MAXIMIZEBOX = 0x00010000
+    SWP_NOMOVE = 0x0002
+    SWP_NOSIZE = 0x0001
+    SWP_NOZORDER = 0x0004
+    SWP_FRAMECHANGED = 0x0020
+
+    best = [None, 10 ** 9]   # [hwnd, score]
+
+    def _class_name(hwnd):
+        buf = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(hwnd, buf, 256)
+        return buf.value
+
+    EnumProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+
+    def _cb(hwnd, _lparam):
+        try:
+            if not user32.IsWindowVisible(hwnd):
+                return True
+            if _class_name(hwnd) != "Chrome_WidgetWin_1":
+                return True
+            r = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(r))
+            w, h = r.right - r.left, r.bottom - r.top
+            score = (abs(r.left - expect_left) + abs(r.top - expect_top)
+                     + abs(w - expect_w) + abs(h - expect_h))
+            if score < best[1]:
+                best[1], best[0] = score, hwnd
+        except Exception:
+            pass
+        return True
+
+    try:
+        user32.EnumWindows(EnumProc(_cb), 0)
+    except Exception:
+        return False
+
+    hwnd = best[0]
+    # Require a plausible geometry match so we never strip styles off an
+    # unrelated Chrome window the worker happens to have open.
+    if hwnd is None or best[1] > 4 * tol:
+        return False
+    try:
+        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
+        user32.SetWindowLongW(hwnd, GWL_STYLE,
+                              style & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX)
+        user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+                            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED)
+        return True
+    except Exception:
+        return False
 
 
 async def cdp_screenshot(page, *, fmt="jpeg", quality=95):
@@ -68,7 +149,10 @@ async def cdp_screenshot(page, *, fmt="jpeg", quality=95):
     The capture is at physical-pixel size (CSS viewport * device scale). We
     upsample to VIEWPORT_W x VIEWPORT_H so every saved screenshot has the
     same dimensions regardless of which user recorded it — click coordinates
-    are stored in CSS pixels (0-1440 / 0-900) so no coord rescaling is needed.
+    are stored in CSS pixels (0-1428 / 0-896) so no coord rescaling is needed.
+
+    The nav toolbar lives in a SEPARATE OS window (see nav_toolbar.py), which
+    this page-surface grab never sees, so there is nothing of ours to hide here.
     """
     client = await page.context.new_cdp_session(page)
     try:
@@ -133,32 +217,37 @@ async def run_tracker(task_description, session_dir, start_url,
 
     # Use Chromium --app mode to hide browser chrome (no URL bar, no tab bar).
     # All user actions are forced into the page viewport, matching Fara's setup.
-    app_url = start_url if start_url and start_url != "about:blank" else "https://www.google.com/"
+    app_url = start_url if start_url and start_url != "about:blank" else "https://www.google.com/?hl=en"
 
-    # Auto-shrink the rendering on small/HiDPI screens so the full 1440x900
+    # Auto-shrink the rendering on small/HiDPI screens so the full 1428x896
     # CSS viewport always fits in the window — no clipping, identical layout
     # across all users. The thought panel now lives INSIDE the page (it overlays
     # the right edge only while a thought is pending), so we no longer reserve a
     # strip of the screen for a separate window.
-    scale = _detect_scale_factor(reserve_w=0)
+    scale = _detect_scale_factor(reserve_w=0, reserve_h=NAV_BAR_H)
     win_w = int(VIEWPORT_W * scale)
     win_h = int(VIEWPORT_H * scale)
     print(f"  [layout] device-scale={scale:.3f}, window={win_w}x{win_h}, "
-          f"CSS viewport=1440x900")
+          f"CSS viewport=1428x896, nav-bar={NAV_BAR_H}px")
 
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
             user_data_dir,
             headless=False,
+            # Force English: locale sets the Accept-Language header AND
+            # navigator.language(s), so sites render in English instead of the
+            # OS locale (ko-KR). --lang sets Chromium's own UI language.
+            locale="en-US",
             viewport={"width": VIEWPORT_W, "height": VIEWPORT_H},
             device_scale_factor=scale,
             args=[
                 "--no-default-browser-check",
                 "--no-first-run",
+                "--lang=en-US",
                 "--disable-blink-features=AutomationControlled",
                 f"--app={app_url}",
                 f"--window-size={win_w},{win_h}",
-                "--window-position=0,0",
+                f"--window-position=0,{NAV_BAR_H}",
                 f"--force-device-scale-factor={scale}",
                 # macOS flicker-mitigation flag:
                 #  PaintHolding causes a brief white repaint during the screenshot pause.
@@ -246,6 +335,7 @@ async def run_tracker(task_description, session_dir, start_url,
                 if panel is not None:
                     panel._processing -= 1
         await context.expose_function("__webtrack_event", _on_event)
+
         if panel is not None:
             # thought submitted from the in-page textarea
             await context.expose_function("__webtrack_thought", panel.on_thought)
@@ -321,6 +411,32 @@ async def run_tracker(task_description, session_dir, start_url,
         # Start the wait-action idle timer.
         await converter.start_wait_timer()
 
+        # Floating nav toolbar (back / forward / reload) in its OWN OS window,
+        # parked in the strip ABOVE the browser. A separate window is the whole
+        # point: the CDP page-surface grab never captures it (no screenshot
+        # pollution, no per-capture flicker), and clicks don't steal browser
+        # focus (WS_EX_NOACTIVATE). A click records the matching keyboard-
+        # shortcut action and performs the real navigation — same path the real
+        # Alt+Left / Alt+Right / F5 keys already take.
+        nav_stop = None
+        try:
+            from nav_toolbar import start_nav_toolbar
+            _loop = asyncio.get_running_loop()
+
+            async def do_nav(direction):
+                if panel is not None:
+                    panel._processing += 1
+                try:
+                    await converter.handle_nav(direction)
+                finally:
+                    if panel is not None:
+                        panel._processing -= 1
+
+            _nav_thread, nav_stop = start_nav_toolbar(
+                _loop, do_nav, width=win_w, height=NAV_BAR_H)
+        except Exception as e:
+            print(f"  [warn] nav toolbar not started: {e}")
+
         # Background screenshot cache — refreshes recorder.last_png_bytes at a
         # low rate so every action handler can use the PRE-action page state
         # (avoids races where the user's keydown triggers navigation before
@@ -344,6 +460,46 @@ async def run_tracker(task_description, session_dir, start_url,
                 except asyncio.TimeoutError:
                     pass
         cache_task = asyncio.create_task(_bg_cache_refresh())
+
+        # Window-size guard: a worker drag-resizing the window would distort the
+        # fixed 1428x896 screenshots. Two layers: (1) strip the OS resize border
+        # so it can't be dragged at all; (2) a CDP watchdog that snaps the bounds
+        # back if anything changes them (covers the rare case where (1) couldn't
+        # locate the window). Wholly best-effort — never breaks the run.
+        async def _guard_window_size():
+            try:
+                bclient = await context.new_cdp_session(page)
+                wid = (await bclient.send("Browser.getWindowForTarget"))["windowId"]
+                target = dict((await bclient.send(
+                    "Browser.getWindowBounds", {"windowId": wid}))["bounds"])
+            except Exception as e:
+                print(f"  [warn] window-size guard disabled: {e}")
+                return
+            target.pop("windowState", None)   # only pin left/top/width/height
+            try:
+                locked = await asyncio.to_thread(
+                    _make_window_unresizable,
+                    target.get("left", 0), target.get("top", NAV_BAR_H),
+                    target.get("width", win_w), target.get("height", win_h))
+                print(f"  [layout] window resize "
+                      f"{'disabled (border removed)' if locked else 'guarded by watchdog'}")
+            except Exception:
+                pass
+            while not cache_stop.is_set():
+                try:
+                    cur = (await bclient.send(
+                        "Browser.getWindowBounds", {"windowId": wid}))["bounds"]
+                    if any(cur.get(k) != target.get(k)
+                           for k in ("left", "top", "width", "height")):
+                        await bclient.send("Browser.setWindowBounds",
+                                           {"windowId": wid, "bounds": target})
+                except Exception:
+                    pass
+                try:
+                    await asyncio.wait_for(cache_stop.wait(), timeout=0.5)
+                except asyncio.TimeoutError:
+                    pass
+        guard_task = asyncio.create_task(_guard_window_size())
 
         # Background progress reporter for server mode (polled by frontend).
         progress_task = None
@@ -423,6 +579,14 @@ async def run_tracker(task_description, session_dir, start_url,
         cache_stop.set()
         if cache_task and not cache_task.done():
             cache_task.cancel()
+
+        # Stop the window-size guard (its loop also watches cache_stop).
+        if guard_task and not guard_task.done():
+            guard_task.cancel()
+
+        # Close the floating nav toolbar window.
+        if nav_stop is not None:
+            nav_stop.set()
 
         # Stop idle timer and flush buffered actions.
         await converter.stop_wait_timer()
@@ -549,58 +713,3 @@ def _write_terminate_entry(recorder, status="success"):
             recorder.card_callback(recorder.step, entry["action"], shot_abs)
         except Exception as e:
             print(f"  [warn] terminate card_callback failed: {e}")
-
-
-async def run_explorer(start_url="https://www.google.com/", stop_flag=None):
-    """Open a plain Chromium window for free exploration.
-
-    NO recording, NO inject.js, NO thought panel, NO single-tab lock — just a
-    normal browser the worker uses to learn the task's sites/paths before the
-    real tracked run. Nothing is saved. Returns when the window is closed (or
-    stop_flag is set). Uses a SEPARATE profile dir so it can never clash with
-    the tracker's profile lock if both happen to be open."""
-    state_dir = os.environ.get("WEBTRACKER_STATE_DIR") or os.path.dirname(os.path.abspath(__file__))
-    user_data_dir = os.path.join(state_dir, USER_DATA_SUBDIR + "_explore")
-    os.makedirs(user_data_dir, exist_ok=True)
-    url = start_url or "https://www.google.com/"
-
-    async with async_playwright() as p:
-        context = await p.chromium.launch_persistent_context(
-            user_data_dir,
-            headless=False,
-            no_viewport=True,            # normal resizable window, not a fixed viewport
-            args=[
-                "--no-default-browser-check",
-                "--no-first-run",
-                "--start-maximized",
-                "--disable-blink-features=AutomationControlled",
-            ],
-            ignore_default_args=["--enable-automation"],
-        )
-
-        page = context.pages[0] if context.pages else await context.new_page()
-        try:
-            await page.goto(url)
-        except Exception:
-            pass
-
-        closed = asyncio.Event()
-        context.on("close", lambda *a: closed.set())
-
-        async def _watch_stop():
-            if stop_flag is None:
-                return
-            while not stop_flag.is_set():
-                await asyncio.sleep(0.3)
-            closed.set()
-        watch = asyncio.ensure_future(_watch_stop())
-
-        print(">>> 탐색용 브라우저가 열렸습니다. 둘러본 뒤 창을 닫으세요 (기록되지 않습니다). <<<")
-        await closed.wait()
-
-        if not watch.done():
-            watch.cancel()
-        try:
-            await context.close()
-        except Exception:
-            pass

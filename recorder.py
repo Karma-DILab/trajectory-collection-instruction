@@ -4,7 +4,7 @@ Each entry:
 {
   "timestamp": "...",
   "screenshot": "screenshot/0001.png",
-  "viewport_size": [1440, 900],
+  "viewport_size": [1428, 896],
   "action": { Fara-style action dict }
 }
 
@@ -23,7 +23,7 @@ from utils import get_current_time
 
 
 class WebActionRecorder:
-    def __init__(self, page, session_dir, task_description, viewport_size=(1440, 900)):
+    def __init__(self, page, session_dir, task_description, viewport_size=(1428, 896)):
         self.page = page
         self.session_dir = session_dir
         self.task_description = task_description

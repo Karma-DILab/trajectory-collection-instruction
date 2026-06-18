@@ -64,7 +64,7 @@ async def amain():
     print(f"  -> {task}")
 
     # Fixed starting page (matches server mode).
-    url = "https://www.google.com/"
+    url = "https://www.google.com/?hl=en"   # hl=en forces Google's English UI
 
     here = os.path.dirname(os.path.abspath(__file__))
     events_root = os.path.join(here, "events")

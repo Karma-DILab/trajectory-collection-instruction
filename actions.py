@@ -62,6 +62,47 @@ class ActionConverter:
             await self._flush_type()
             await self._flush_scroll()
 
+    # ---------- nav toolbar (back / forward / reload) ----------
+
+    # event.key for each on-screen nav button — chosen so the recorded `key`
+    # action is byte-identical to what _on_keydown produces when the worker
+    # presses the real shortcut instead of clicking the button.
+    _NAV_KEYS = {
+        "back":    ["Alt", "ArrowLeft"],
+        "forward": ["Alt", "ArrowRight"],
+        "reload":  ["F5"],
+    }
+
+    async def handle_nav(self, direction):
+        """A nav button was clicked in the page. Record it as the equivalent
+        keyboard shortcut (so the trajectory looks exactly as if the worker had
+        pressed Alt+Left / Alt+Right / F5) and then perform the REAL navigation
+        through Playwright — a synthetic key event cannot drive the browser's
+        own back/forward/reload."""
+        keys = self._NAV_KEYS.get(direction)
+        if keys is None:
+            return
+        self._reset_wait_timer()
+        async with self._lock:
+            await self._flush_type()
+            await self._flush_scroll()
+            # Default (cached) screenshot is the pre-navigation page — the
+            # correct observation for "the worker chose to go back here".
+            await self.recorder.record({"action": "key", "keys": keys})
+
+        # Drive the actual navigation AFTER recording, outside the lock. goBack /
+        # goForward are no-ops at the ends of history; reload always applies.
+        page = self.recorder.page
+        try:
+            if direction == "back":
+                await page.go_back()
+            elif direction == "forward":
+                await page.go_forward()
+            elif direction == "reload":
+                await page.reload()
+        except Exception as e:
+            print(f"  [warn] nav '{direction}' failed: {e}")
+
 
     # ---------- idle wait timer ----------
 

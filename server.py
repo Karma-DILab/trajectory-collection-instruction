@@ -398,35 +398,6 @@ def start():
     return jsonify({"status": "tracking", "session_dir": session_dir, "task": t, "practice": practice})
 
 
-@app.route("/explore", methods=["POST"])
-def explore():
-    """Open a plain Chromium window for exploration (no recording)."""
-    name, info = _require_user()
-    if not info:
-        return jsonify({"error": "user required"}), 400
-    with info["lock"]:
-        if info["state"]["status"] == "tracking":
-            return jsonify({"error": "기록 중에는 탐색할 수 없습니다."}), 400
-        if info["state"].get("exploring"):
-            return jsonify({"error": "이미 탐색 창이 열려 있습니다."}), 400
-        info["state"]["exploring"] = True
-    info["explore_stop"] = threading.Event()
-    threading.Thread(target=_run_explore_thread, args=(info,), daemon=True).start()
-    return jsonify({"status": "exploring"})
-
-
-def _run_explore_thread(info):
-    try:
-        from tracker import run_explorer
-        asyncio.run(run_explorer("https://www.google.com/",
-                                 stop_flag=info.get("explore_stop")))
-    except Exception as e:
-        print(f"[explore] error: {e}")
-    finally:
-        with info["lock"]:
-            info["state"]["exploring"] = False
-
-
 @app.route("/finalize", methods=["POST"])
 def finalize():
     """Set the outcome (성공/실패/다시하기) and its reason on the session that
@@ -758,7 +729,7 @@ def _run_tracker_thread(name, info, task, session_dir, stop_flag):
         relay_thread.start()
 
         recorder = asyncio.run(
-            run_tracker(task["task"], session_dir, "https://www.google.com/",
+            run_tracker(task["task"], session_dir, "https://www.google.com/?hl=en",
                         stop_flag=stop_flag, progress=progress,
                         terminate_status=lambda: info.get("pending_terminate_status") or "success")
         )

@@ -1,2 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# PyInstaller
 build/
 dist/
+
+# Runtime / generated data (machine-specific, not source)
+browser_profile/
+browser_profile_explore/
+users/
+events/
+progress.json
