@@ -470,29 +470,41 @@ async def run_tracker(task_description, session_dir, start_url,
             try:
                 bclient = await context.new_cdp_session(page)
                 wid = (await bclient.send("Browser.getWindowForTarget"))["windowId"]
-                target = dict((await bclient.send(
+                b0 = dict((await bclient.send(
                     "Browser.getWindowBounds", {"windowId": wid}))["bounds"])
             except Exception as e:
                 print(f"  [warn] window-size guard disabled: {e}")
                 return
-            target.pop("windowState", None)   # only pin left/top/width/height
+            # Strip the resize border first (matched by the current geometry).
             try:
                 locked = await asyncio.to_thread(
                     _make_window_unresizable,
-                    target.get("left", 0), target.get("top", NAV_BAR_H),
-                    target.get("width", win_w), target.get("height", win_h))
+                    b0.get("left", 0), b0.get("top", NAV_BAR_H),
+                    b0.get("width", win_w), b0.get("height", win_h))
                 print(f"  [layout] window resize "
                       f"{'disabled (border removed)' if locked else 'guarded by watchdog'}")
             except Exception:
                 pass
+            # Re-read the *post-strip* size as the target so the watchdog isn't
+            # forever fighting the few-px frame change (which would setWindowBounds
+            # every tick and fire resize events that close dropdown/hover menus).
+            try:
+                tb = (await bclient.send(
+                    "Browser.getWindowBounds", {"windowId": wid}))["bounds"]
+                tw, th = tb.get("width", win_w), tb.get("height", win_h)
+            except Exception:
+                tw, th = win_w, win_h
+            # Correct ONLY a real resize (>12px), size only. Ignore moves and tiny
+            # jitter — never call setWindowBounds in steady state.
             while not cache_stop.is_set():
                 try:
                     cur = (await bclient.send(
                         "Browser.getWindowBounds", {"windowId": wid}))["bounds"]
-                    if any(cur.get(k) != target.get(k)
-                           for k in ("left", "top", "width", "height")):
-                        await bclient.send("Browser.setWindowBounds",
-                                           {"windowId": wid, "bounds": target})
+                    if abs(cur.get("width", tw) - tw) > 12 or \
+                       abs(cur.get("height", th) - th) > 12:
+                        await bclient.send(
+                            "Browser.setWindowBounds",
+                            {"windowId": wid, "bounds": {"width": tw, "height": th}})
                 except Exception:
                     pass
                 try:
@@ -500,6 +512,15 @@ async def run_tracker(task_description, session_dir, start_url,
                 except asyncio.TimeoutError:
                     pass
         guard_task = asyncio.create_task(_guard_window_size())
+
+        # Raise the tracked window to the foreground. On some setups the
+        # persistent-context / --app window opens *behind* other windows (only
+        # showing in the taskbar), forcing the worker to click it. bring_to_front
+        # activates + raises it so it's ready to use immediately.
+        try:
+            await page.bring_to_front()
+        except Exception as e:
+            print(f"  [warn] could not bring window to front: {e}")
 
         # Background progress reporter for server mode (polled by frontend).
         progress_task = None
@@ -524,6 +545,8 @@ async def run_tracker(task_description, session_dir, start_url,
                 converter._wait_task.cancel()
             if converter._scroll_task and not converter._scroll_task.done():
                 converter._scroll_task.cancel()
+            if converter._backspace_task and not converter._backspace_task.done():
+                converter._backspace_task.cancel()
             closed.set()
 
         context.on("close", _on_closed)

@@ -15,9 +15,10 @@ import asyncio
 from utils import normalize_key_name
 
 
-SCROLL_FLUSH_DELAY = 0.5  # seconds idle -> commit one scroll gesture
-TYPE_FLUSH_DELAY = 1.5    # seconds idle -> commit one typing burst
-WAIT_INTERVAL = 12.0      # idle seconds -> emit a `wait` action (when enabled)
+SCROLL_FLUSH_DELAY = 0.5      # seconds idle -> commit one scroll gesture
+TYPE_FLUSH_DELAY = 1.5        # seconds idle -> commit one typing burst
+BACKSPACE_FLUSH_DELAY = 1.0   # seconds idle -> commit one backspace run
+WAIT_INTERVAL = 12.0         # idle seconds -> emit a `wait` action (when enabled)
 
 
 class ActionConverter:
@@ -30,8 +31,10 @@ class ActionConverter:
         self.type_buffer = ""
         self.type_coord = None       # cursor coord for the buffered text
         self.scroll_accum = 0
+        self.backspace_count = 0     # consecutive standalone backspaces pending
         self._scroll_task = None
         self._type_task = None
+        self._backspace_task = None
         self._wait_task = None
         self._wait_active = False
         self._lock = asyncio.Lock()
@@ -59,8 +62,11 @@ class ActionConverter:
                 self._scroll_task.cancel()
             if self._type_task and not self._type_task.done():
                 self._type_task.cancel()
+            if self._backspace_task and not self._backspace_task.done():
+                self._backspace_task.cancel()
             await self._flush_type()
             await self._flush_scroll()
+            await self._flush_backspace()
 
     # ---------- nav toolbar (back / forward / reload) ----------
 
@@ -86,6 +92,7 @@ class ActionConverter:
         async with self._lock:
             await self._flush_type()
             await self._flush_scroll()
+            await self._flush_backspace()
             # Default (cached) screenshot is the pre-navigation page — the
             # correct observation for "the worker chose to go back here".
             await self.recorder.record({"action": "key", "keys": keys})
@@ -130,6 +137,7 @@ class ActionConverter:
         async with self._lock:
             await self._flush_type()
             await self._flush_scroll()
+            await self._flush_backspace()
             await self.recorder.record({"action": "wait", "time": int(delay)})
         # re-arm so consecutive idle periods emit more `wait`s
         self._reset_wait_timer()
@@ -141,6 +149,7 @@ class ActionConverter:
             return  # right/middle ignored
         await self._flush_type()
         await self._flush_scroll()
+        await self._flush_backspace()
         coord = [int(ev["x"]), int(ev["y"])]
         self.type_coord = coord
         await self.recorder.record({"action": "left_click", "coordinate": coord})
@@ -168,14 +177,26 @@ class ActionConverter:
 
         # Plain printable char (no Ctrl/Alt) -> buffer for typing
         if not non_shift_mods and len(key) == 1 and (key.isprintable() or key == " "):
+            await self._flush_backspace()   # a real char ends any delete run
             self.type_buffer += key
             self._restart_type_timer()
             return
 
-        # Backspace while typing -> backspace inside buffer
+        # Backspace while typing -> backspace inside buffer (fixes the current
+        # burst; stays part of the same `type` action).
         if not non_shift_mods and key == "Backspace" and self.type_buffer:
             self.type_buffer = self.type_buffer[:-1]
             self._restart_type_timer()
+            return
+
+        # Backspace with no active typing buffer -> the worker is deleting
+        # committed/existing text. Accumulate consecutive presses into ONE `key`
+        # action so a whole delete run is a single action + a single thought
+        # card, not one per keystroke.
+        if not non_shift_mods and key == "Backspace":
+            await self._flush_scroll()
+            self.backspace_count += 1
+            self._restart_backspace_timer()
             return
 
         # Plain Enter while a typing burst is still buffered (not yet flushed by
@@ -203,6 +224,7 @@ class ActionConverter:
         # Anything else -> emit `key` action
         await self._flush_type()
         await self._flush_scroll()
+        await self._flush_backspace()
         mods = list(non_shift_mods)
         if shift:
             mods.append("Shift")
@@ -217,9 +239,10 @@ class ActionConverter:
 
     async def _on_wheel(self, ev):
         # A scroll counts as switching to a new "intent" — flush any pending
-        # type buffer so the trajectory stays in {type, scroll, type, ...} order
-        # instead of having scrolls cut into a typing burst silently.
+        # type buffer / backspace run so the trajectory stays in
+        # {type, scroll, ...} order instead of cutting into them silently.
         await self._flush_type()
+        await self._flush_backspace()
         delta_y = ev.get("deltaY", 0)
         # Fara: positive = up, wheel.deltaY: positive = down
         self.scroll_accum -= int(round(delta_y))
@@ -253,6 +276,25 @@ class ActionConverter:
         async with self._lock:
             await self._flush_type()
 
+    # ---------- backspace coalescing ----------
+    # A run of standalone backspaces self-commits as ONE key action after
+    # BACKSPACE_FLUSH_DELAY of no further backspaces (or sooner if another action
+    # interrupts the run, via the _flush_backspace() calls in the handlers).
+
+    def _restart_backspace_timer(self):
+        if self._backspace_task and not self._backspace_task.done():
+            self._backspace_task.cancel()
+        self._backspace_task = asyncio.create_task(
+            self._backspace_flush_after(BACKSPACE_FLUSH_DELAY))
+
+    async def _backspace_flush_after(self, delay):
+        try:
+            await asyncio.sleep(delay)
+        except asyncio.CancelledError:
+            return
+        async with self._lock:
+            await self._flush_backspace()
+
     # ---------- flushers (caller must hold lock) ----------
 
     async def _flush_type(self):
@@ -272,3 +314,13 @@ class ActionConverter:
             return
         await self.recorder.record({"action": "scroll", "pixels": self.scroll_accum})
         self.scroll_accum = 0
+
+    async def _flush_backspace(self):
+        if self.backspace_count <= 0:
+            return
+        n = self.backspace_count
+        self.backspace_count = 0          # reset first: a stale debounce that
+        entry = {"action": "key", "keys": ["Backspace"]}   # fires later no-ops
+        if n > 1:
+            entry["count"] = n            # how many times to press Backspace
+        await self.recorder.record(entry)

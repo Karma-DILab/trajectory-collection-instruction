@@ -25,6 +25,23 @@
     catch (_) { return false; }
   }
 
+  // The element a left-click is about to leave the caret in (the input the user
+  // clicked, or its focusable ancestor). We restore focus to THIS on unlock so a
+  // clicked search box / text field still has the cursor after the thought is
+  // written. Returns null for non-editable targets (buttons, links, etc.).
+  function focusableFor(node) {
+    try {
+      var el = node;
+      while (el && el.nodeType === 1) {
+        var tag = el.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+            el.isContentEditable) return el;
+        el = el.parentElement;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   // ============================ in-page panel ============================
 
   var UI_ID = "__webtrack_panel";
@@ -33,6 +50,7 @@
   var els = null;          // cached panel widgets once built
   var currentStep = null;  // step of the card currently shown
   var refocusEl = null;    // page element to restore focus to on unlock
+  var clickFocusTarget = null;  // focusable elem a just-started click will focus
 
   // Block page input while a thought is pending. Events on our own UI pass
   // through untouched so the textarea / buttons stay usable. We only block the
@@ -148,10 +166,17 @@
     if (!els) return;
     if (on) {
       if (!window.__wt_blocking) {
-        // remember the page's focused field (once, on the first lock)
-        try { refocusEl = document.activeElement; } catch (_) { refocusEl = null; }
-        if (isOurs(refocusEl)) refocusEl = null;
+        // Remember where to put the caret back on unlock. For a click, the
+        // browser focuses the clicked input only AFTER this runs (it's the
+        // mousedown default action), so document.activeElement here is still the
+        // OLD field. clickFocusTarget (captured in the mousedown handler) is the
+        // field the user actually clicked, so prefer it.
+        var ae = null;
+        try { ae = document.activeElement; } catch (_) { ae = null; }
+        if (isOurs(ae)) ae = null;
+        refocusEl = clickFocusTarget || ae;
       }
+      clickFocusTarget = null;   // consumed
       els.dim.style.display = "block";
       addBlockers();
     } else {
@@ -210,7 +235,14 @@
     if (e.button !== 0 || isOurs(e.target)) return;
     send({ type: "click", button: e.button,
            x: Math.round(e.clientX), y: Math.round(e.clientY) });
-    setLock(true);   // every left click is a recorded action -> lock the next
+    clickFocusTarget = focusableFor(e.target);  // caret target to restore later
+    // NOTE: we deliberately do NOT setLock(true) here. Locking on mousedown
+    // raises our dim overlay BEFORE the click's own handler runs; on hover-
+    // revealed dropdown menus that made the menu collapse and the click land on
+    // nothing (the page reverted, no navigation). Instead the lock is applied
+    // when the thought card actually appears (showCard, driven by Python after
+    // the action is recorded) — by then the page's own click has already run. A
+    // navigating click re-locks via the fresh page's startup addBlockers().
   }, true);
 
   // Keyboard
@@ -235,8 +267,28 @@
 
   try {
     window.open = function (url) {
-      if (url) { try { window.location.href = url; } catch (e) {} }
-      return null;
+      // Single-tab mode: navigate THIS page instead of opening a new window.
+      var go = function (u) {
+        try { if (u) window.location.href = (u && u.href) ? u.href : u; } catch (e) {}
+      };
+      if (url) { go(url); }
+      // Many sites navigate via `var w = window.open(); w.location.href = url;`
+      // (open with NO url, then assign location). Returning null breaks that —
+      // the assignment throws and the navigation never happens (this is why some
+      // dropdown/menu links did nothing). Return a stand-in whose location
+      // assignment navigates THIS page so those clicks still work.
+      var loc = { assign: go, replace: go };
+      try {
+        Object.defineProperty(loc, "href",
+          { set: go, get: function () { return window.location.href; } });
+      } catch (e) {}
+      var w = { focus: function () {}, blur: function () {},
+                close: function () {}, closed: false };
+      try {
+        Object.defineProperty(w, "location",
+          { set: go, get: function () { return loc; } });
+      } catch (e) {}
+      return w;
     };
   } catch (e) {}
 

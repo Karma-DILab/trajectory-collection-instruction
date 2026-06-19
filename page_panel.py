@@ -34,7 +34,11 @@ def summarize(action):
     if a == "scroll":
         return f"scroll  {action.get('pixels', 0):+d}px"
     if a == "key":
-        return "key  " + " + ".join(action.get("keys", []))
+        label = "key  " + " + ".join(action.get("keys", []))
+        n = action.get("count")
+        if n and n > 1:
+            label += f"  ×{n}"   # e.g. "key  Backspace  ×3"
+        return label
     if a == "wait":
         return f"wait  {action.get('time', 0)}s"
     if a == "terminate":

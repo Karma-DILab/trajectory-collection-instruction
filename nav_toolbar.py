@@ -112,17 +112,17 @@ def start_nav_toolbar(loop, on_nav, *, width, height=46, x=0, y=0):
         _no_activate()
 
         def _tick():
+            # Only poll the stop flag. We deliberately do NOT re-assert -topmost
+            # here: doing it repeatedly can briefly activate this window and steal
+            # focus from the browser, which closes hover/dropdown menus mid-use.
+            # The window is created topmost once; that's enough.
             if stop_event.is_set():
                 try:
                     root.destroy()
                 except Exception:
                     pass
                 return
-            try:
-                root.attributes("-topmost", True)   # re-assert if something stole it
-            except Exception:
-                pass
-            root.after(250, _tick)
+            root.after(300, _tick)
 
         root.after(250, _tick)
         try:
