@@ -1318,6 +1318,17 @@
   .skip-btn:hover { background: #ffedd5; }
   .skip-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+  /* Finalize form — neutral palette (outcome buttons keep their own colours) */
+  #finalizeForm {
+    background: white;
+    border: 1.5px solid var(--border);
+  }
+  #finalizeReason {
+    background: white;
+    border-color: #d1d5db;
+  }
+  #finalizeReason::placeholder { color: #9ca3af; }
+
   /* Repeat note */
   .repeat-note {
     background: #eff6ff;
@@ -1969,8 +1980,12 @@
     <!-- 작업 종료(창 닫음) 후: 결과 선택 + 완료 이유 작성 -->
     <div id="finalizeForm" class="submit-section" style="display:none; flex-direction:column; align-items:stretch; gap:14px; margin-bottom:28px;">
       <div>
-        <strong style="font-size:16px; color:var(--good); display:block; margin-bottom:4px;">작업을 마치셨나요?</strong>
+        <strong style="font-size:16px; color:var(--fg); display:block; margin-bottom:4px;">작업을 마치셨나요?</strong>
         <span style="font-size:14px; color:#374151;">결과를 선택하고, 그렇게 판단한 이유를 작성한 뒤 저장하세요.</span>
+      </div>
+      <div id="finalizeScreenshot" style="display:none; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#f9fafb;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); padding:8px 12px; background:#f3f4f6; border-bottom:1px solid var(--border);">마지막 화면 (창 닫기 직전)</div>
+        <img id="finalizeScreenshotImg" style="display:block; width:100%; max-height:480px; object-fit:contain;" alt="마지막 스크린샷">
       </div>
       <div style="display:flex; gap:10px;">
         <button class="devtools-outcome success-btn" data-status="success" style="flex:1; padding:13px 0; font-size:14px;">성공</button>
@@ -2124,6 +2139,18 @@
     const msg = document.getElementById("finalizeMsg");
     if (msg) msg.textContent = "";
     updateSavedListVisibility();
+    loadLastScreenshot();
+  }
+  function loadLastScreenshot() {
+    const wrapper = document.getElementById("finalizeScreenshot");
+    const img = document.getElementById("finalizeScreenshotImg");
+    if (!wrapper || !img) return;
+    wrapper.style.display = "none";
+    img.src = "";
+    const url = tUrl("/last-screenshot");
+    img.onload = function () { wrapper.style.display = "block"; };
+    img.onerror = function () { wrapper.style.display = "none"; };
+    img.src = url;
   }
   function selectOutcome(btn) {
     finalizeStatus = btn.dataset.status;

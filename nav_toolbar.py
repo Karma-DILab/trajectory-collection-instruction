@@ -22,6 +22,10 @@ the worker can still use the real keyboard shortcuts (which are recorded too).
 import asyncio
 import threading
 
+# Serialises Tk instances across sessions: a new tk.Tk() must not be created
+# while a previous one is still alive in another thread, or Tcl raises
+# "Tcl_AsyncDelete: async handler deleted by the wrong thread" and crashes.
+_tk_lock = threading.Lock()
 
 # (glyph, korean label, direction) for each button, left-to-right.
 _BUTTONS = (
@@ -43,6 +47,10 @@ def start_nav_toolbar(loop, on_nav, *, width, height=46, x=0, y=0):
     stop_event = threading.Event()
 
     def _run():
+        with _tk_lock:
+            _run_inner()
+
+    def _run_inner():
         try:
             import tkinter as tk
         except Exception as e:

@@ -230,6 +230,20 @@ async def run_tracker(task_description, session_dir, start_url,
     print(f"  [layout] device-scale={scale:.3f}, window={win_w}x{win_h}, "
           f"CSS viewport=1428x896, nav-bar={NAV_BAR_H}px")
 
+    # Playwright fires TargetClosedError on internal futures when the browser
+    # is closed; these are never awaited by us so Python logs "Future exception
+    # was never retrieved". Suppress them — they are expected and harmless.
+    def _exc_handler(loop, context):
+        exc = context.get("exception")
+        try:
+            from playwright._impl._errors import TargetClosedError
+            if isinstance(exc, TargetClosedError):
+                return
+        except Exception:
+            pass
+        loop.default_exception_handler(context)
+    asyncio.get_event_loop().set_exception_handler(_exc_handler)
+
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
             user_data_dir,
@@ -322,6 +336,16 @@ async def run_tracker(task_description, session_dir, start_url,
                 on_finish=(console_finish.set if console_finish is not None else None))
             recorder.card_callback = panel.enqueue
 
+            async def _refresh_after_thought():
+                try:
+                    pg = recorder.page
+                    if pg is not None:
+                        png = await cdp_screenshot(pg, fmt="jpeg", quality=95)
+                        recorder.last_png_bytes = png
+                except Exception:
+                    pass
+            panel.on_cleared = _refresh_after_thought
+
         # Expose Python callbacks for the injected JS to invoke. The event
         # handler is wrapped to flag the panel as "processing" while an input is
         # in flight, so a page that navigates mid-action keeps itself locked
@@ -365,6 +389,8 @@ async def run_tracker(task_description, session_dir, start_url,
         # were actually looking at, instead of the page from the last action.
         async def _refresh_cache_for(p):
             try:
+                if panel is not None and panel.pending_count() > 0:
+                    return
                 png = await cdp_screenshot(p, fmt="png")
                 recorder.last_png_bytes = png
             except Exception:

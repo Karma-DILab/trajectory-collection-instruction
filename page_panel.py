@@ -56,6 +56,7 @@ class InPagePanel:
         self._processing = 0   # input events being handled right now (see below)
         self.closed = False
         self.outcome = None    # "success"/"fail"/"retry" chosen on the finish buttons
+        self.on_cleared = None  # async callback fired when all cards are answered
 
     @property
     def page(self):
@@ -100,6 +101,11 @@ class InPagePanel:
             await self._show(self._current)
         else:
             await self._set_lock(False)   # all answered -> release the page
+            if callable(self.on_cleared):
+                try:
+                    await self.on_cleared()
+                except Exception:
+                    pass
 
     def finish(self, status="success"):
         """__webtrack_finish: one of the 성공/실패/다시하기 buttons was clicked.

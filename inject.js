@@ -213,7 +213,17 @@
     els.status.textContent = "남은 입력: " + (payload.pending || 1);
     setLock(true);                       // dim + block
     els.panel.style.display = "flex";    // reveal the card (now it has content)
-    try { els.ta.focus(); } catch (_) {} // focus is reliable: same window, DOM
+    // showCard fires via CDP ~15ms after mousedown, but the browser click event
+    // arrives ~50-150ms later (after button release). If the panel is visible
+    // with pointer-events enabled it triggers mouseleave on hover-revealed
+    // dropdowns, closing them and removing the target before the click lands.
+    // pointer-events:none for 150ms lets the click reach its original target;
+    // restoring it (and focusing the textarea) happens after the click completes.
+    els.panel.style.pointerEvents = "none";
+    setTimeout(function () {
+      els.panel.style.pointerEvents = "";
+      try { els.ta.focus(); } catch (_) {}
+    }, 150);
   }
   window.__webtrack_showcard = showCard;
 

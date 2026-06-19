@@ -634,6 +634,27 @@ def session_screenshot(sname, filename):
     return send_from_directory(sd, safe)
 
 
+@app.route("/last-screenshot")
+def last_screenshot():
+    name, info = _require_user()
+    if not info:
+        return ("user required", 400)
+    with info["lock"]:
+        sdir = info["state"].get("last_session_dir")
+    if not sdir or not os.path.isdir(sdir):
+        return ("No session", 404)
+    sd = os.path.join(sdir, "screenshot")
+    if not os.path.isdir(sd):
+        return ("No screenshots", 404)
+    files = sorted([
+        f for f in os.listdir(sd)
+        if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+    ])
+    if not files:
+        return ("No screenshots", 404)
+    return send_from_directory(sd, files[-1])
+
+
 @app.route("/session/<sname>/discard", methods=["POST"])
 def session_discard(sname):
     name, info = _require_user()
