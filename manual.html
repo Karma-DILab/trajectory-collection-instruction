@@ -1350,51 +1350,6 @@
       여러분이 할 일은 웹에서 수행할 수 있는 구체적인 목표가 담긴 <strong>Task</strong>를 직접 수행하고, 그 일련의 과정을 기록으로 남기는 것입니다. 각 행동 하나하나는 <strong>Step</strong>이 되고, 처음부터 끝까지 완성된 전체 과정을 <strong>Trajectory</strong>라고 부릅니다. 여러분이 남긴 Trajectory는 나중에 <strong>AI가 사람처럼 웹을 다루도록 학습하는 데</strong> 사용됩니다.
     </div>
 
-    <!-- Step 생성 과정 (T/A/O 박스) -->
-    <div class="sec">
-      <h2>Step 생성 과정</h2>
-      <p class="sec-desc">하나의 Step은 아래 세 가지 요소로 구성됩니다.</p>
-
-      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
-        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
-          <span style="flex:0 0 auto; font-weight:700; color:var(--good);">Observation</span>
-          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
-          <span style="color:var(--fg);">— Action 직전의 화면이 자동으로 저장됩니다.</span>
-        </div>
-        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
-          <span style="flex:0 0 auto; font-weight:700; color:var(--accent);">Action</span>
-          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
-          <span style="color:var(--fg);">— 클릭·타이핑·스크롤 등 수행한 행동이 자동으로 저장됩니다.</span>
-        </div>
-        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
-          <span style="flex:0 0 auto; font-weight:700; color:#6d28d9;">Thought</span>
-          <span style="color:#6d28d9; font-size:13px; font-weight:600; background:#ede9fe; padding:1px 8px; border-radius:8px;">직접 작성</span>
-          <span style="color:var(--fg);">— Action 직후 활성화되는 입력창에 해당 행동을 한 이유를 작성합니다.</span>
-        </div>
-      </div>
-
-      <div class="tao-step">
-        <div class="tao-left">
-          <img class="tao-image-real" src="examples/dunkin_peach/0004_marked.jpg" alt="Step 4 화면">
-          <div class="tao-image-cap">맛 옵션 선택 화면</div>
-        </div>
-        <div class="tao-right">
-          <div class="tao-box observation">
-            <div class="tao-label">Observation <span class="tao-role auto">자동 저장</span></div>
-            <div class="tao-content">← 왼쪽 스크린샷</div>
-          </div>
-          <div class="tao-box action">
-            <div class="tao-label">Action <span class="tao-role auto">자동 저장</span></div>
-            <div class="tao-content"><code>left_click (692, 622)</code></div>
-          </div>
-          <div class="tao-box thought">
-            <div class="tao-label">Thought <span class="tao-role user"><strong>직접 작성</strong></span></div>
-            <div class="tao-content">"To select the Task-specified option among the available flavor variants, the Peach Passionfruit Lemonade option is clicked on the product detail page."</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 예시 Trajectory -->
     <div class="sec">
       <h2>생성해야하는 Trajectory 예시</h2>
@@ -1440,6 +1395,51 @@
             <img class="step-thumb" src="examples/dunkin_peach/0006.jpg" alt="step 6 — terminate">
             <div class="step-action">terminate (success)</div>
             <p class="step-thought">Upon reaching the login/payment information entry screen, which represents the final step immediately preceding purchase completion, the session is terminated here without proceeding with the actual transaction, in consideration of safety.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 생성 과정 (T/A/O 박스) -->
+    <div class="sec">
+      <h2>Step 생성 과정</h2>
+      <p class="sec-desc">하나의 Step은 아래 세 가지 요소로 구성됩니다.</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:var(--good);">Observation</span>
+          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
+          <span style="color:var(--fg);">— Action 직전의 화면이 자동으로 저장됩니다.</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:var(--accent);">Action</span>
+          <span style="color:var(--muted); font-size:13px; font-weight:600;">자동 저장</span>
+          <span style="color:var(--fg);">— 클릭·타이핑·스크롤 등 수행한 행동이 자동으로 저장됩니다.</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:12px; font-size:16px; line-height:1.6;">
+          <span style="flex:0 0 auto; font-weight:700; color:#6d28d9;">Thought</span>
+          <span style="color:#6d28d9; font-size:13px; font-weight:600; background:#ede9fe; padding:1px 8px; border-radius:8px;">직접 작성</span>
+          <span style="color:var(--fg);">— Action 직후 활성화되는 입력창에 해당 행동을 한 이유를 작성합니다.</span>
+        </div>
+      </div>
+
+      <div class="tao-step">
+        <div class="tao-left">
+          <img class="tao-image-real" src="examples/dunkin_peach/0004_marked.jpg" alt="Step 4 화면">
+          <div class="tao-image-cap">맛 옵션 선택 화면</div>
+        </div>
+        <div class="tao-right">
+          <div class="tao-box observation">
+            <div class="tao-label">Observation <span class="tao-role auto">자동 저장</span></div>
+            <div class="tao-content">← 왼쪽 스크린샷</div>
+          </div>
+          <div class="tao-box action">
+            <div class="tao-label">Action <span class="tao-role auto">자동 저장</span></div>
+            <div class="tao-content"><code>left_click (692, 622)</code></div>
+          </div>
+          <div class="tao-box thought">
+            <div class="tao-label">Thought <span class="tao-role user"><strong>직접 작성</strong></span></div>
+            <div class="tao-content">"To select the Task-specified option among the available flavor variants, the Peach Passionfruit Lemonade option is clicked on the product detail page."</div>
           </div>
         </div>
       </div>
@@ -1593,35 +1593,6 @@
             <div class="ex-tag" style="font-size:13px; font-weight:800; margin-bottom:8px;">✕ Wrong</div>
             <img class="ex-img-real" src="examples/example_bad.png" alt="안전성 나쁜 예시 — 실제 정보 입력 후 진행">
             <div class="ex-cap">실제 결제·로그인 정보를 입력해 <strong>개인정보 노출이 발생함.</strong></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tips -->
-    <div class="sec" style="margin-top:32px;">
-      <h2 style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:18px;">💡</span> Trajectory 생성 시 알아두면 좋은 팁
-      </h2>
-
-      <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; padding:18px 20px; margin-top:12px;">
-        <div style="font-size:14px; font-weight:700; color:#92400e; margin-bottom:12px;">브라우저 내비게이션 버튼 사용법</div>
-        <p style="font-size:13px; color:#78350f; margin:0 0 14px; line-height:1.7;">
-          작업 브라우저 창 상단에는 아래 세 가지 내비게이션 버튼이 표시됩니다.<br>
-          버튼 클릭도 하나의 <strong>Action으로 기록</strong>되므로, 반드시 버튼을 통해 수행해야 합니다.
-        </p>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
-            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">뒤로 가기</div>
-            <div style="font-size:12px; color:#6b7280; line-height:1.6;">직전에 방문한 페이지로 돌아갑니다. 잘못된 링크를 눌렀거나 이전 단계로 되돌아가야 할 때 사용합니다.</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
-            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">앞으로 가기</div>
-            <div style="font-size:12px; color:#6b7280; line-height:1.6;">뒤로 가기를 눌러 돌아온 뒤, 다시 앞 페이지로 이동할 때 사용합니다.</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
-            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">새로고침</div>
-            <div style="font-size:12px; color:#6b7280; line-height:1.6;">현재 페이지를 다시 불러옵니다. 페이지가 제대로 로드되지 않았거나 정보를 최신 상태로 갱신해야 할 때 사용합니다.</div>
           </div>
         </div>
       </div>
@@ -1885,6 +1856,34 @@
         <!-- </div> -->
 
       </div><!-- /practice-steps -->
+    </div>
+    <!-- Tips -->
+    <div class="sec" style="margin-top:32px;">
+      <h2 style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:18px;">💡</span> Trajectory 생성 시 알아두면 좋은 팁
+      </h2>
+
+      <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; padding:18px 20px; margin-top:12px;">
+        <div style="font-size:14px; font-weight:700; color:#92400e; margin-bottom:12px;">브라우저 내비게이션 버튼 사용법</div>
+        <p style="font-size:13px; color:#78350f; margin:0 0 14px; line-height:1.7;">
+          작업 브라우저 창 상단에는 아래 세 가지 내비게이션 버튼이 표시됩니다.<br>
+          버튼 클릭도 하나의 <strong>Action으로 기록</strong>되므로, 반드시 버튼을 통해 수행해야 합니다.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">뒤로 가기</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">직전에 방문한 페이지로 돌아갑니다. 잘못된 링크를 눌렀거나 이전 단계로 되돌아가야 할 때 사용합니다.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">앞으로 가기</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">뒤로 가기를 눌러 돌아온 뒤, 다시 앞 페이지로 이동할 때 사용합니다.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">새로고침</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">현재 페이지를 다시 불러옵니다. 페이지가 제대로 로드되지 않았거나 정보를 최신 상태로 갱신해야 할 때 사용합니다.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Divider -->
