@@ -11,6 +11,10 @@ block_cipher = None
 # Pull in the entire playwright package (driver/node.exe + JS bundle).
 pw_datas, pw_binaries, pw_hidden = collect_all("playwright")
 
+# Pull in flask and its dependencies.
+flask_datas, flask_binaries, flask_hidden = collect_all("flask")
+wz_datas, wz_binaries, wz_hidden = collect_all("werkzeug")
+
 # Locate the installed Chromium so we can ship it inside the exe.
 LOCAL_APPDATA = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~\\AppData\\Local")
 CHROMIUM_SRC = os.path.join(LOCAL_APPDATA, "ms-playwright", "chromium-1223")
@@ -31,9 +35,9 @@ extra_datas = [
 a = Analysis(
     ["webtracker_launcher.py"],
     pathex=["."],
-    binaries=pw_binaries,
-    datas=pw_datas + extra_datas,
-    hiddenimports=pw_hidden + [
+    binaries=pw_binaries + flask_binaries + wz_binaries,
+    datas=pw_datas + flask_datas + wz_datas + extra_datas,
+    hiddenimports=pw_hidden + flask_hidden + wz_hidden + [
         "server", "tracker", "actions", "recorder", "utils", "tasks_data",
         "page_panel",
         "refinement", "refine_utils",
@@ -41,7 +45,7 @@ a = Analysis(
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=["tkinter", "pytest", "PyInstaller"],
+    excludes=["pytest", "PyInstaller"],
     cipher=block_cipher,
 )
 

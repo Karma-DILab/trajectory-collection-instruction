@@ -268,25 +268,22 @@ def set_index():
     return jsonify({"index": idx, "task": TASKS[idx]})
 
 
-@app.route("/next-task", methods=["POST"])
-def next_task():
-    name, info = _require_user()
-    if not info:
-        return jsonify({"error": "user required"}), 400
-    if not TASKS:
-        return jsonify({"error": "no tasks loaded"}), 400
+def _pick_next_task(info, skip_current=False):
+    """Return (idx, task) for the next uncompleted task, or None if all done."""
     completed = set(info["progress"]["completed_ids"])
-    current_id = TASKS[_safe_index(info)]["id"]
-    pool = [i for i, t in enumerate(TASKS)
-            if t["id"] not in completed and t["id"] != current_id]
-    if not pool:
-        pool = [i for i, t in enumerate(TASKS) if t["id"] != current_id] \
-            or list(range(len(TASKS)))
+    all_ids = {t["id"] for t in TASKS}
+    remaining = all_ids - completed
+    if skip_current:
+        current_id = TASKS[_safe_index(info)]["id"]
+        remaining.discard(current_id)
+    if not remaining:
+        return None
+    pool = [i for i, t in enumerate(TASKS) if t["id"] in remaining]
     idx = random.choice(pool)
-    info["progress"]["current_index"] = idx
-    save_progress(name, info)
-    # Picking a fresh task implies starting a new attempt — reset the run state
-    # so the UI no longer shows the lingering "done" pill from the previous run.
+    return idx
+
+
+def _reset_run_state(info):
     with info["lock"]:
         if info["state"].get("status") in ("done", "error"):
             info["state"].update({
@@ -299,6 +296,41 @@ def next_task():
                 "last_session_dir": None,
                 "practice": False,
             })
+
+
+@app.route("/next-task", methods=["POST"])
+def next_task():
+    name, info = _require_user()
+    if not info:
+        return jsonify({"error": "user required"}), 400
+    if not TASKS:
+        return jsonify({"error": "no tasks loaded"}), 400
+    idx = _pick_next_task(info)
+    if idx is None:
+        return jsonify({"done": True})
+    info["progress"]["current_index"] = idx
+    save_progress(name, info)
+    _reset_run_state(info)
+    return jsonify({"index": idx, "task": TASKS[idx]})
+
+
+@app.route("/skip-task", methods=["POST"])
+def skip_task():
+    name, info = _require_user()
+    if not info:
+        return jsonify({"error": "user required"}), 400
+    if not TASKS:
+        return jsonify({"error": "no tasks loaded"}), 400
+    current_id = TASKS[_safe_index(info)]["id"]
+    if current_id not in info["progress"]["completed_ids"]:
+        info["progress"]["completed_ids"].append(current_id)
+    idx = _pick_next_task(info, skip_current=True)
+    if idx is None:
+        save_progress(name, info)
+        return jsonify({"done": True})
+    info["progress"]["current_index"] = idx
+    save_progress(name, info)
+    _reset_run_state(info)
     return jsonify({"index": idx, "task": TASKS[idx]})
 
 

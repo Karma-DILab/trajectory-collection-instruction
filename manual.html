@@ -1307,6 +1307,17 @@
   }
   .work-start-btn:hover { background: #1d4ed8; }
 
+  /* Task 건너뛰기 버튼 */
+  .skip-btn {
+    background: #fff7ed;
+    color: #92400e;
+    border: 1.5px solid #fed7aa;
+    box-shadow: none;
+    cursor: pointer;
+  }
+  .skip-btn:hover { background: #ffedd5; }
+  .skip-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
   /* Repeat note */
   .repeat-note {
     background: #eff6ff;
@@ -1470,40 +1481,92 @@
 
       <!-- ② Thought 작성 -->
       <div class="rule">
-        <!-- <div class="rule-head">
-          <div class="rule-num">2</div>
-          <div>
-            <div class="rule-title">Thought 은 구체적으로 작성해야한다</div>
-            <div class="rule-body">
-              Thought 는 <strong>"왜 이 행동을 했는지"</strong> 입니다. 아래 형식에 맞춰 한두 문장으로 작성해 주세요.<br>
-              지금 <strong>"무엇이"</strong> 보여서, <strong>"무엇을"</strong> 하려고, 이 <strong>"행동"</strong> 을 했다.
-            </div>
-          </div>
-        </div> -->
         <div class="rule-head">
           <div class="rule-num">2</div>
           <div>
-            <div class="rule-title">Thought 는 구체적으로 작성해야 한다</div>
+            <div class="rule-title">Thought 는 구체적인 추론 과정을 담아야 한다</div>
             <div class="rule-body">
-              Thought 는 <strong>해당 행동을 한 이유</strong>를 의미합니다. 아래 형식에 맞춰 한두 문장으로 작성해 주세요.<br>
-              “[무엇이] 보여서, [무엇을] 하려고, [이 행동을] 했다.”
+              Thought 는 단순히 “무엇을 클릭했다"가 아니라, <strong>왜 그 행동을 선택했는지</strong>에 담긴 추론을 드러내야 합니다.<br>
+              각 step의 Thought 에 해당하는 내용을 자연스럽게 녹여 한두 문장으로 작성하세요.
             </div>
           </div>
         </div>
 
+        <!-- 5 reasoning types
+        <div style="border:1px solid var(--border); border-radius:8px; overflow:hidden; margin:4px 0 18px; background:white;">
+
+          <div style="display:flex; border-bottom:1px solid var(--border);">
+            <div style="width:4px; flex:0 0 4px; background:#6366f1;"></div>
+            <div style="padding:12px 16px; flex:1;">
+              <div style="font-size:13px; font-weight:800; color:#6366f1; margin-bottom:2px;">Planning <span style="font-weight:500; color:var(--muted);">— 계획·전략</span></div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">목표를 하위 단계로 분해하고 순서·전략을 정함</div>
+              <div style="font-size:12px; color:#374151; background:#f5f3ff; border-radius:4px; padding:7px 10px; line-height:1.6;">"To purchase the product, the item must first be found via search before navigating to the product detail page to select the flavor."</div>
+            </div>
+          </div>
+
+          <div style="display:flex; border-bottom:1px solid var(--border);">
+            <div style="width:4px; flex:0 0 4px; background:var(--accent);"></div>
+            <div style="padding:12px 16px; flex:1;">
+              <div style="font-size:13px; font-weight:800; color:var(--accent); margin-bottom:2px;">Affordance reasoning <span style="font-weight:500; color:var(--muted);">— 인터페이스 추론</span></div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">UI 요소가 무슨 동작을 하는지·어떻게 작동할지 추론</div>
+              <div style="font-size:12px; color:#374151; background:#eff6ff; border-radius:4px; padding:7px 10px; line-height:1.6;">"The prominent 'Buy Now' button is identified as the primary purchase CTA, so clicking it initiates the checkout flow directly."</div>
+            </div>
+          </div>
+
+          <div style="display:flex; border-bottom:1px solid var(--border);">
+            <div style="width:4px; flex:0 0 4px; background:var(--good);"></div>
+            <div style="padding:12px 16px; flex:1;">
+              <div style="font-size:13px; font-weight:800; color:var(--good); margin-bottom:2px;">World / domain knowledge <span style="font-weight:500; color:var(--muted);">— 도메인 지식</span></div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">화면에 없는 상식·도메인 지식을 근거로 행동</div>
+              <div style="font-size:12px; color:#374151; background:#f0fdf4; border-radius:4px; padding:7px 10px; line-height:1.6;">"Amazon typically lists product variants as selectable buttons below the main image, so the flavor options are expected to appear in that area."</div>
+            </div>
+          </div>
+
+          <div style="display:flex; border-bottom:1px solid var(--border);">
+            <div style="width:4px; flex:0 0 4px; background:#f59e0b;"></div>
+            <div style="padding:12px 16px; flex:1;">
+              <div style="font-size:13px; font-weight:800; color:#d97706; margin-bottom:2px;">Exploration <span style="font-weight:500; color:var(--muted);">— 탐색</span></div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">불확실할 때 정보를 얻으려 탐색·가설 검증</div>
+              <div style="font-size:12px; color:#374151; background:#fffbeb; border-radius:4px; padding:7px 10px; line-height:1.6;">"Since the initial search returned no matching results, the brand's official website is visited directly to check if the product is listed there."</div>
+            </div>
+          </div>
+
+          <div style="display:flex;">
+            <div style="width:4px; flex:0 0 4px; background:var(--danger);"></div>
+            <div style="padding:12px 16px; flex:1;">
+              <div style="font-size:13px; font-weight:800; color:var(--danger); margin-bottom:2px;">Error handling <span style="font-weight:500; color:var(--muted);">— 오류 처리</span></div>
+              <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">오류 인지·진단·복구</div>
+              <div style="font-size:12px; color:#374151; background:#fef2f2; border-radius:4px; padding:7px 10px; line-height:1.6;">"The page returned a 404 error, indicating the URL is no longer valid. The browser is navigated back to retry the search with different keywords."</div>
+            </div>
+          </div>
+
+        </div> -->
+
+        <!-- Good/Bad example -->
+        <!-- <div style="font-size:13px; font-weight:700; color:var(--muted); letter-spacing:0.5px; margin:0 0 12px;">Thought 예시</div> -->
+        <div style="font-size:13px; color:#374151; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:8px 14px; margin-bottom:14px;">
+          <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:#92400e; margin-right:8px;">Task</span>Purchase Dunkin' Zero Sugar Refreshers SINGLES TO GO in Peach Passionfruit Lemonade Flavor.
+        </div>
+
         <div class="thought-ex">
           <div class="thought-ex-img">
-            <img src="examples/dunkin_peach/0003_marked.jpg" alt="Step 3 화면 — Amazon 링크 클릭">
+            <img src="examples/dunkin_peach/0003_marked.jpg" alt="Step 3 — Amazon 링크 클릭">
           </div>
           <div class="thought-ex-cards">
             <div class="ex good">
               <div class="ex-card-label">좋은 Thought</div>
               <div class="ex-card-text">"To navigate to the Amazon product detail page for Dunkin' Refreshers Singles To Go, the corresponding product link is clicked from the search results list."</div>
+              <div class="ex-card-reason">→ 검색 결과 중 어떤 링크를, 왜 선택했는지 구체적으로 드러남.</div>
+            </div>
+            <div class="ex good">
+              <div class="ex-card-label">좋은 Thought</div>
+              <div class="ex-card-text">"Amazon is a known direct-purchase channel for this type of product, so the Amazon listing is selected over other results to ensure the item can be added to cart and purchased within the same session."</div>
+              <div class="ex-card-reason">→ 왜 다른 결과가 아닌 Amazon 링크를 골랐는지, 도메인 지식에 근거한 판단이 드러남.</div>
             </div>
             <div class="ex bad">
               <div class="ex-card-label">나쁜 Thought</div>
               <div class="ex-card-text">"To solve the given task accurately"</div>
-              <div class="ex-card-reason">→ 너무 일반적이어서 아무 step 에나 맞는 내용임.</div>
+              <div class="ex-card-reason">→ 추론이 전혀 드러나지 않고, 어떤 step에나 붙일 수 있는 내용임.</div>
             </div>
           </div>
         </div>
@@ -1532,7 +1595,36 @@
             <div class="ex-cap">실제 결제·로그인 정보를 입력해 <strong>개인정보 노출이 발생함.</strong></div>
           </div>
         </div>
-      </div>      
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="sec" style="margin-top:32px;">
+      <h2 style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:18px;">💡</span> Trajectory 생성 시 알아두면 좋은 팁
+      </h2>
+
+      <div style="background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; padding:18px 20px; margin-top:12px;">
+        <div style="font-size:14px; font-weight:700; color:#92400e; margin-bottom:12px;">브라우저 내비게이션 버튼 사용법</div>
+        <p style="font-size:13px; color:#78350f; margin:0 0 14px; line-height:1.7;">
+          작업 브라우저 창 상단에는 아래 세 가지 내비게이션 버튼이 표시됩니다.<br>
+          버튼 클릭도 하나의 <strong>Action으로 기록</strong>되므로, 반드시 버튼을 통해 수행해야 합니다.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">뒤로 가기</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">직전에 방문한 페이지로 돌아갑니다. 잘못된 링크를 눌렀거나 이전 단계로 되돌아가야 할 때 사용합니다.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">앞으로 가기</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">뒤로 가기를 눌러 돌아온 뒤, 다시 앞 페이지로 이동할 때 사용합니다.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; background:white; border:1px solid #fde68a; border-radius:8px; padding:10px 14px;">
+            <div style="flex:0 0 auto; padding:6px 12px; background:#f3f4f6; border:1.5px solid #d1d5db; border-radius:7px; font-size:12px; font-weight:700; color:#374151; white-space:nowrap;">새로고침</div>
+            <div style="font-size:12px; color:#6b7280; line-height:1.6;">현재 페이지를 다시 불러옵니다. 페이지가 제대로 로드되지 않았거나 정보를 최신 상태로 갱신해야 할 때 사용합니다.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Page 1 nav -->
@@ -1567,9 +1659,10 @@
             <p class="ps-desc">
               <strong>시작</strong> 버튼을 누르면 잠시 후 <strong>별도의 브라우저 창</strong>이 열립니다.
               이 창에서 수행하는 모든 행동이 Trajectory로 기록됩니다.
+              익숙하지 않은 Task라면, <strong>이 Task 건너뛰기</strong> 버튼을 눌러 넘어가세요.
             </p>
             <div class="btn-img-placeholder">
-                <img src="examples/btn_section_after.png" alt="시작 버튼 활성화 화면" style="width:100%; border-radius:8px; border:1px solid var(--border);">
+                <img src="examples/btn_start_example.png" alt="시작 버튼 활성화 화면" style="width:100%; border-radius:8px; border:1px solid var(--border);">
             </div>
           </div>
         </div>
@@ -1853,6 +1946,10 @@
         <button class="work-btn start-btn active" id="startBtn">시작</button>
         <p class="work-action-desc">시작 버튼을 누르면 별도의 브라우저 창이 열리며 기록이 시작됩니다.</p>
       </div>
+      <div class="work-action-item">
+        <button class="work-btn skip-btn" id="skipBtn" onclick="onSkipTask()">이 Task 건너뛰기</button>
+        <p class="work-action-desc">이 Task를 수행하지 않고 다음 Task로 넘어갑니다.</p>
+      </div>
     </div>
 
     <!-- webtracker 연동 상태 표시 -->
@@ -1949,6 +2046,21 @@
     }
   }
 
+  function _applyTaskResponse(data) {
+    const el = document.getElementById("assignedTaskText");
+    const startBtn = document.getElementById("startBtn");
+    const skipBtn = document.getElementById("skipBtn");
+    if (data.done) {
+      assignedTaskId = null;
+      if (el) el.textContent = "모든 Task를 완료했습니다. 수고하셨습니다!";
+      if (startBtn) { startBtn.disabled = true; startBtn.textContent = "완료"; }
+      if (skipBtn) { skipBtn.disabled = true; }
+    } else if (data.task) {
+      assignedTaskId = (typeof data.task.id === "number") ? data.task.id : null;
+      if (el) el.textContent = data.task.task || "(할당된 Task 없음)";
+    }
+  }
+
   // 서버는 /next-task 를 POST 해야만 current_index 가 다음 Task 로 넘어간다.
   // (완료/기록종료는 completed_ids 에 추가만 하고 인덱스를 옮기지 않음)
   async function loadNextTask() {
@@ -1958,9 +2070,8 @@
     try {
       const res = await fetch(tUrl("/next-task"), { method: "POST" });
       const data = await res.json();
-      if (res.ok && data.task) {
-        assignedTaskId = (typeof data.task.id === "number") ? data.task.id : null;
-        if (el) el.textContent = data.task.task || "(할당된 Task 없음)";
+      if (res.ok) {
+        _applyTaskResponse(data);
       } else if (el) {
         el.textContent = "다음 Task를 불러오지 못했습니다: " + (data.error || res.status);
       }
@@ -2134,6 +2245,31 @@
       }).join("") || "(스텝 없음)";
       c.dataset.loaded = "1";
     } catch (e) { c.innerHTML = "불러오기 실패"; }
+  }
+
+  async function onSkipTask() {
+    const skipBtn = document.getElementById("skipBtn");
+    const startBtn = document.getElementById("startBtn");
+    // 기록 중일 때는 건너뛰기 불가
+    if (startBtn && startBtn.disabled) return;
+    if (!getUser()) return;
+    if (!confirm("이 Task를 건너뛰고 다음 Task로 넘어가시겠습니까?")) return;
+    skipBtn.disabled = true; skipBtn.textContent = "넘어가는 중...";
+    trackMsg("", false);
+    try {
+      const res = await fetch(tUrl("/skip-task"), { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        _applyTaskResponse(data);
+        if (!data.done) {
+          skipBtn.disabled = false; skipBtn.textContent = "이 Task 건너뛰기";
+        }
+      } else {
+        skipBtn.disabled = false; skipBtn.textContent = "이 Task 건너뛰기";
+      }
+    } catch (e) {
+      skipBtn.disabled = false; skipBtn.textContent = "이 Task 건너뛰기";
+    }
   }
 
   async function onStart() {
