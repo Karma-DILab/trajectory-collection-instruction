@@ -61,7 +61,9 @@
     try { e.preventDefault(); } catch (_) {}
     e.stopImmediatePropagation();
   }
+  var WT_BLOCK = true;   // block page input while a thought is pending
   function addBlockers() {
+    if (!WT_BLOCK) return;
     if (window.__wt_blocking) return;
     window.__wt_blocking = true;
     LOCK_EVS.forEach(function (t) {
@@ -161,7 +163,15 @@
   // card itself is revealed by showCard() once it has content and can grab the
   // textarea focus. This avoids a window where an empty/stale panel is visible
   // but unfocused, where a stray Enter would land on the page instead.
+  // (diagnostic flags removed — root cause was revealing the panel overlay; the
+  // fix is to DELAY revealing it until the page's own click action has run, see
+  // page_panel.py _show.)
+  var WT_UI = true;
+  var WT_DIM = true;
+  var WT_FOCUS = true;
+  var WT_CARD = true;
   function setLock(on) {
+    if (!WT_UI) return;
     buildPanel();
     if (!els) return;
     if (on) {
@@ -177,7 +187,7 @@
         refocusEl = clickFocusTarget || ae;
       }
       clickFocusTarget = null;   // consumed
-      els.dim.style.display = "block";
+      if (WT_DIM) els.dim.style.display = "block";
       addBlockers();
     } else {
       els.dim.style.display = "none";
@@ -197,6 +207,7 @@
   // textarea so the user can type the thought immediately (same window -> the
   // focus always sticks).
   function showCard(payload) {
+    if (!WT_UI || !WT_CARD) return;
     buildPanel();
     if (!els || !payload) return;
     currentStep = payload.step;
@@ -213,17 +224,7 @@
     els.status.textContent = "남은 입력: " + (payload.pending || 1);
     setLock(true);                       // dim + block
     els.panel.style.display = "flex";    // reveal the card (now it has content)
-    // showCard fires via CDP ~15ms after mousedown, but the browser click event
-    // arrives ~50-150ms later (after button release). If the panel is visible
-    // with pointer-events enabled it triggers mouseleave on hover-revealed
-    // dropdowns, closing them and removing the target before the click lands.
-    // pointer-events:none for 150ms lets the click reach its original target;
-    // restoring it (and focusing the textarea) happens after the click completes.
-    els.panel.style.pointerEvents = "none";
-    setTimeout(function () {
-      els.panel.style.pointerEvents = "";
-      try { els.ta.focus(); } catch (_) {}
-    }, 150);
+    if (WT_FOCUS) { try { els.ta.focus(); } catch (_) {} } // focus the textarea
   }
   window.__webtrack_showcard = showCard;
 
@@ -246,13 +247,9 @@
     send({ type: "click", button: e.button,
            x: Math.round(e.clientX), y: Math.round(e.clientY) });
     clickFocusTarget = focusableFor(e.target);  // caret target to restore later
-    // NOTE: we deliberately do NOT setLock(true) here. Locking on mousedown
-    // raises our dim overlay BEFORE the click's own handler runs; on hover-
-    // revealed dropdown menus that made the menu collapse and the click land on
-    // nothing (the page reverted, no navigation). Instead the lock is applied
-    // when the thought card actually appears (showCard, driven by Python after
-    // the action is recorded) — by then the page's own click has already run. A
-    // navigating click re-locks via the fresh page's startup addBlockers().
+    setLock(true);   // lock immediately so a fast 2nd click can't slip in before
+                     // the card appears (otherwise rapid clicks pile up actions
+                     // and queue multiple thought cards -> the card looks stuck).
   }, true);
 
   // Keyboard
@@ -274,91 +271,74 @@
   }, true);
 
   // ===================== single-tab enforcement =====================
-
-  try {
-    window.open = function (url) {
-      // Single-tab mode: navigate THIS page instead of opening a new window.
-      var go = function (u) {
-        try { if (u) window.location.href = (u && u.href) ? u.href : u; } catch (e) {}
+  var WT_SINGLE_TAB = true;
+  if (WT_SINGLE_TAB) {
+    try {
+      window.open = function (url) {
+        if (url) { try { window.location.href = url; } catch (e) {} }
+        return null;
       };
-      if (url) { go(url); }
-      // Many sites navigate via `var w = window.open(); w.location.href = url;`
-      // (open with NO url, then assign location). Returning null breaks that —
-      // the assignment throws and the navigation never happens (this is why some
-      // dropdown/menu links did nothing). Return a stand-in whose location
-      // assignment navigates THIS page so those clicks still work.
-      var loc = { assign: go, replace: go };
-      try {
-        Object.defineProperty(loc, "href",
-          { set: go, get: function () { return window.location.href; } });
-      } catch (e) {}
-      var w = { focus: function () {}, blur: function () {},
-                close: function () {}, closed: false };
-      try {
-        Object.defineProperty(w, "location",
-          { set: go, get: function () { return loc; } });
-      } catch (e) {}
-      return w;
-    };
-  } catch (e) {}
+    } catch (e) {}
 
-  function stripAnchorTarget(a) {
+    var stripAnchorTarget = function (a) {
+      try {
+        if (!a) return;
+        var t = a.getAttribute && a.getAttribute("target");
+        if (t && t.toLowerCase() === "_blank") a.removeAttribute("target");
+        a.target = "_self";
+      } catch (e) {}
+    };
+    var stripAll = function (root) {
+      try {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll("a[target]").forEach(stripAnchorTarget);
+      } catch (e) {}
+    };
+    stripAll(document);
     try {
-      if (!a) return;
-      const t = a.getAttribute && a.getAttribute("target");
-      if (t && t.toLowerCase() === "_blank") a.removeAttribute("target");
-      a.target = "_self";
-    } catch (e) {}
-  }
-  function stripAll(root) {
-    try {
-      if (!root || !root.querySelectorAll) return;
-      root.querySelectorAll("a[target]").forEach(stripAnchorTarget);
-    } catch (e) {}
-  }
-  stripAll(document);
-  try {
-    new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const n of m.addedNodes) {
-          if (n && n.nodeType === 1) {
-            if (n.tagName === "A") stripAnchorTarget(n);
-            stripAll(n);
+      new MutationObserver(function (mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          var added = mutations[i].addedNodes;
+          for (var j = 0; j < added.length; j++) {
+            var n = added[j];
+            if (n && n.nodeType === 1) {
+              if (n.tagName === "A") stripAnchorTarget(n);
+              stripAll(n);
+            }
           }
         }
+      }).observe(document.documentElement || document, { childList: true, subtree: true });
+    } catch (e) {}
+
+    document.addEventListener("click", function (e) {
+      if (!(e.ctrlKey || e.metaKey || e.button === 1)) return;
+      if (isOurs(e.target)) return;
+      var a = e.target && e.target.closest && e.target.closest("a[href]");
+      if (!a) return;
+      e.preventDefault(); e.stopPropagation();
+      try { window.location.href = a.href; } catch (err) {}
+    }, true);
+
+    document.addEventListener("auxclick", function (e) {
+      if (e.button === 1 && !isOurs(e.target)) {
+        var a = e.target && e.target.closest && e.target.closest("a[href]");
+        if (a) {
+          e.preventDefault(); e.stopPropagation();
+          try { window.location.href = a.href; } catch (err) {}
+        }
       }
-    }).observe(document.documentElement || document, { childList: true, subtree: true });
-  } catch (e) {}
+    }, true);
+  }
 
-  document.addEventListener("click", function (e) {
-    if (!(e.ctrlKey || e.metaKey || e.button === 1)) return;
-    if (isOurs(e.target)) return;
-    const a = e.target && e.target.closest && e.target.closest("a[href]");
-    if (!a) return;
-    e.preventDefault(); e.stopPropagation();
-    try { window.location.href = a.href; } catch (err) {}
-  }, true);
-
-  document.addEventListener("auxclick", function (e) {
-    if (e.button === 1 && !isOurs(e.target)) {
-      const a = e.target && e.target.closest && e.target.closest("a[href]");
-      if (a) {
-        e.preventDefault(); e.stopPropagation();
-        try { window.location.href = a.href; } catch (err) {}
-      }
-    }
-  }, true);
-
-  // ===================== re-show across navigation =====================
-  // A navigating action (e.g. a search) lands us on a FRESH page whose card
-  // hasn't been re-shown yet. We block input SYNCHRONOUSLY from the start, then
-  // ask Python what to do:
-  //   {step,...}    -> re-show this unanswered card (stay locked)
-  //   {busy:true}   -> Python is still recording the action that brought us
-  //                    here; keep polling, the card is about to appear
-  //   null          -> idle; release the page
-  // Without this the page would unlock before the search's card appears and the
-  // Enter meant to save the thought would leak onto the page (bogus key Enter).
+  // ===================== re-lock across navigation =====================
+  // A navigating action (e.g. a search) lands us on a FRESH page. The thought
+  // card lives in a SEPARATE OS window (it survives navigation), so here we only
+  // need to RE-APPLY the dim/lock if a thought is still pending. We block input
+  // SYNCHRONOUSLY from the start, then ask Python:
+  //   {pending:true} -> a thought is still open -> stay dimmed/locked
+  //   {busy:true}    -> Python is still recording the action that brought us
+  //                     here; keep polling
+  //   null           -> idle; release the page
   addBlockers();
   function wtCheck(n) {
     var fn = window.__webtrack_pending_card;
@@ -368,8 +348,8 @@
       return;
     }
     fn().then(function (r) {
-      if (r && r.step != null) { showCard(r); return; }     // card ready -> show
-      var wait = (r && r.busy) ? (n < 60)   // busy: wait up to ~3s for the card
+      if (r && r.pending) { setLock(true); return; }        // pending -> re-lock
+      var wait = (r && r.busy) ? (n < 60)   // busy: wait up to ~3s
                                 : (n < 5);   // idle: tiny grace for in-flight event
       if (wait) { setTimeout(function () { wtCheck(n + 1); }, 50); return; }
       removeBlockers();                       // confidently idle -> release

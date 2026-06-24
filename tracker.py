@@ -35,6 +35,12 @@ SCREEN_RESERVE_H = 100
 # so the toolbar never overlaps the page. See nav_toolbar.py.
 NAV_BAR_H = 46
 
+# Width (px) reserved on the RIGHT of the screen for the thought-card window, so
+# the browser is shrunk to NOT sit under it. An overlapping card gets covered
+# when the browser comes to the front on navigation (and visually blocks the
+# page), so we give the card its own screen strip. See card_window.py.
+CARD_W = 460
+
 # NOTE: the thought panel AND the page lock both live in inject.js now (the card
 # is an in-page overlay; window.__webtrack_setlock toggles the dim+block). One
 # OS window -> no cross-window focus problem. Python drives it via the exposed
@@ -159,7 +165,8 @@ async def cdp_screenshot(page, *, fmt="jpeg", quality=95):
         params = {"format": fmt, "fromSurface": False, "captureBeyondViewport": False}
         if fmt == "jpeg":
             params["quality"] = quality
-        result = await client.send("Page.captureScreenshot", params)
+        result = await asyncio.wait_for(
+            client.send("Page.captureScreenshot", params), timeout=10)
         raw = base64.b64decode(result["data"])
     finally:
         try:
@@ -224,30 +231,22 @@ async def run_tracker(task_description, session_dir, start_url,
     # across all users. The thought panel now lives INSIDE the page (it overlays
     # the right edge only while a thought is pending), so we no longer reserve a
     # strip of the screen for a separate window.
-    scale = _detect_scale_factor(reserve_w=0, reserve_h=NAV_BAR_H)
+    scale = _detect_scale_factor(reserve_w=CARD_W, reserve_h=NAV_BAR_H)
     win_w = int(VIEWPORT_W * scale)
     win_h = int(VIEWPORT_H * scale)
     print(f"  [layout] device-scale={scale:.3f}, window={win_w}x{win_h}, "
           f"CSS viewport=1428x896, nav-bar={NAV_BAR_H}px")
 
-    # Playwright fires TargetClosedError on internal futures when the browser
-    # is closed; these are never awaited by us so Python logs "Future exception
-    # was never retrieved". Suppress them — they are expected and harmless.
-    def _exc_handler(loop, context):
-        exc = context.get("exception")
-        try:
-            from playwright._impl._errors import TargetClosedError
-            if isinstance(exc, TargetClosedError):
-                return
-        except Exception:
-            pass
-        loop.default_exception_handler(context)
-    asyncio.get_event_loop().set_exception_handler(_exc_handler)
-
     async with async_playwright() as p:
         context = await p.chromium.launch_persistent_context(
             user_data_dir,
             headless=False,
+            # Use the real, installed Google Chrome instead of Playwright's
+            # bundled Chromium. Bot-detection services fingerprint the Chromium
+            # vs Chrome distinction (e.g. navigator.userAgentData.brands lists
+            # "Chromium" instead of "Google Chrome"), so this alone removes one
+            # automation tell. Requires Chrome to actually be installed.
+            channel="chrome",
             # Force English: locale sets the Accept-Language header AND
             # navigator.language(s), so sites render in English instead of the
             # OS locale (ko-KR). --lang sets Chromium's own UI language.
@@ -263,33 +262,53 @@ async def run_tracker(task_description, session_dir, start_url,
                 f"--window-size={win_w},{win_h}",
                 f"--window-position=0,{NAV_BAR_H}",
                 f"--force-device-scale-factor={scale}",
-                # macOS flicker-mitigation flag:
-                #  PaintHolding causes a brief white repaint during the screenshot pause.
-                #  (Note: --disable-gpu-vsync was removed because on Windows it
-                #  conflicts with the DWM compositor and causes visible flicker.)
-                "--disable-features=PaintHolding,IsolateOrigins,site-per-process",
-                # Bot-detection mitigation (Tesla, Cloudflare, Akamai, etc.):
+                # Flicker mitigation: PaintHolding causes a brief white repaint
+                # during the screenshot pause. (--disable-gpu-vsync was removed
+                # because on Windows it conflicts with the DWM compositor.)
+                # NOTE: we intentionally do NOT disable web-security or site
+                # isolation. Those (--disable-web-security, IsolateOrigins,
+                # site-per-process) are unusual, detectable, and break JS-driven
+                # navigation / checkout on complex sites (Amazon "Buy Now",
+                # dropdown menu links) — which a normal Chrome handles fine.
+                "--disable-features=PaintHolding",
                 "--disable-infobars",
                 "--disable-extensions",
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-                "--disable-web-security",
+                # The thought-card window (card_window.py) steals OS focus from
+                # the tracked Chrome window on every single recorded action.
+                # Real Chrome (unlike the bundled Chromium automation profile)
+                # throttles/discards backgrounded tabs by default, which can
+                # kill the tracked renderer mid-session purely from losing
+                # focus this often. These three switches turn that off.
+                "--disable-backgrounding-occluded-windows",
+                "--disable-background-timer-throttling",
+                "--disable-renderer-backgrounding",
             ],
             ignore_default_args=["--enable-automation"],
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/131.0.0.0 Safari/537.36"
-            ),
+            # No user_agent override: real Chrome's own UA must match the
+            # Sec-CH-UA / navigator.userAgentData client hints it generates
+            # internally (both derived from its real version). Overriding one
+            # but not the other creates a mismatch that is itself a stronger
+            # bot signal than using a slightly-dated-looking real UA.
         )
 
         # Stealth init script: hides common automation flags BEFORE any page
         # script runs (helps with Tesla, Cloudflare, Akamai bot detection).
         await context.add_init_script("""
+            // --- automation flags ---
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-            Object.defineProperty(navigator, 'plugins',   { get: () => [1,2,3,4,5] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['en-US','en'] });
-            window.chrome = window.chrome || { runtime: {} };
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            // platform / hardware consistent with a real Windows desktop
+            try { Object.defineProperty(navigator, 'platform', { get: () => 'Win32' }); } catch (e) {}
+            try { Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 }); } catch (e) {}
+            try { Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 }); } catch (e) {}
+            // chrome object present, like real Chrome (NOT the crude fake plugin
+            // list we used before — headful Chromium already has real plugins, so
+            // overriding them looked MORE bot-like; we just leave them real now).
+            window.chrome = window.chrome || {};
+            window.chrome.runtime = window.chrome.runtime || {};
+            // permissions.query: report the real Notification permission
             const origQuery = window.navigator.permissions && window.navigator.permissions.query;
             if (origQuery) {
               window.navigator.permissions.query = (p) => (
@@ -298,6 +317,22 @@ async def run_tracker(task_description, session_dir, start_url,
                   : origQuery(p)
               );
             }
+            // WebGL: if the renderer is SwiftShader (software GL — a classic
+            // headless/automation tell), mask it as a real GPU. Real GPUs are
+            // left untouched so we never create a mismatch.
+            try {
+              [window.WebGLRenderingContext, window.WebGL2RenderingContext].forEach(function (C) {
+                if (!C) return;
+                const gp = C.prototype.getParameter;
+                C.prototype.getParameter = function (p) {
+                  const r = gp.apply(this, arguments);
+                  if (p === 37446 && typeof r === 'string' &&
+                      /swiftshader|software|llvmpipe/i.test(r))
+                    return 'ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)';
+                  return r;
+                };
+              });
+            } catch (e) {}
         """)
 
         # NOTE: inject.js is registered LATER, AFTER expose_function — init
@@ -336,16 +371,6 @@ async def run_tracker(task_description, session_dir, start_url,
                 on_finish=(console_finish.set if console_finish is not None else None))
             recorder.card_callback = panel.enqueue
 
-            async def _refresh_after_thought():
-                try:
-                    pg = recorder.page
-                    if pg is not None:
-                        png = await cdp_screenshot(pg, fmt="jpeg", quality=95)
-                        recorder.last_png_bytes = png
-                except Exception:
-                    pass
-            panel.on_cleared = _refresh_after_thought
-
         # Expose Python callbacks for the injected JS to invoke. The event
         # handler is wrapped to flag the panel as "processing" while an input is
         # in flight, so a page that navigates mid-action keeps itself locked
@@ -371,7 +396,13 @@ async def run_tracker(task_description, session_dir, start_url,
         # Inject event-capture + in-page panel JS into every page (every
         # navigation too). Registered AFTER the bindings above so that on each
         # page the bindings exist by the time inject.js calls them at startup.
-        await context.add_init_script(path=inject_js_path)
+        # DIAGNOSTIC: set WEBTRACKER_NO_INJECT=1 to skip inject.js entirely (keeps
+        # the CDP screenshot loop + bindings) — to test whether inject.js is what
+        # breaks JS-driven navigation, vs the CDP machinery.
+        if os.environ.get("WEBTRACKER_NO_INJECT"):
+            print("  [DIAG] inject.js NOT injected (WEBTRACKER_NO_INJECT set)")
+        else:
+            await context.add_init_script(path=inject_js_path)
 
         # The first page was already loaded by --app before add_init_script /
         # expose_function were registered, so inject.js is NOT active on it yet.
@@ -389,8 +420,6 @@ async def run_tracker(task_description, session_dir, start_url,
         # were actually looking at, instead of the page from the last action.
         async def _refresh_cache_for(p):
             try:
-                if panel is not None and panel.pending_count() > 0:
-                    return
                 png = await cdp_screenshot(p, fmt="png")
                 recorder.last_png_bytes = png
             except Exception:
@@ -437,31 +466,73 @@ async def run_tracker(task_description, session_dir, start_url,
         # Start the wait-action idle timer.
         await converter.start_wait_timer()
 
-        # Floating nav toolbar (back / forward / reload) in its OWN OS window,
-        # parked in the strip ABOVE the browser. A separate window is the whole
-        # point: the CDP page-surface grab never captures it (no screenshot
-        # pollution, no per-capture flicker), and clicks don't steal browser
-        # focus (WS_EX_NOACTIVATE). A click records the matching keyboard-
-        # shortcut action and performs the real navigation — same path the real
-        # Alt+Left / Alt+Right / F5 keys already take.
-        nav_stop = None
-        try:
-            from nav_toolbar import start_nav_toolbar
-            _loop = asyncio.get_running_loop()
+        # Shared, PROCESS-LIFETIME Tk thread for all floating windows (nav
+        # toolbar + thought card). Spawning a fresh tk.Tk() in a fresh thread
+        # once per tracking session corrupts Tcl's thread-local notifier
+        # bookkeeping after a few sessions in one process ("Tcl_AsyncDelete:
+        # async handler deleted by the wrong thread"), hanging the tracker
+        # thread. Reusing one already-running root/thread for every session
+        # and only building/destroying this session's Toplevels against it
+        # avoids that entirely. See ui_thread.py.
+        import ui_thread as _ui_thread_mod
+        ui_thread = _ui_thread_mod.get_shared()
+        _loop = asyncio.get_running_loop()
 
-            async def do_nav(direction):
+        async def do_nav(direction):
+            if panel is not None:
+                panel._processing += 1
+            try:
+                await converter.handle_nav(direction)
+            finally:
                 if panel is not None:
-                    panel._processing += 1
-                try:
-                    await converter.handle_nav(direction)
-                finally:
-                    if panel is not None:
-                        panel._processing -= 1
+                    panel._processing -= 1
 
-            _nav_thread, nav_stop = start_nav_toolbar(
-                _loop, do_nav, width=win_w, height=NAV_BAR_H)
+        # Thought-card window (separate OS window). The card was moved OUT of
+        # the page: an in-page overlay card, when revealed, cancels the page's
+        # OWN JS click action on some sites (Amazon "Buy Now", hover-dropdown
+        # nav). A separate window never touches the page DOM, so it can't
+        # interfere. Its Submit calls panel.on_thought; the in-page dim/lock
+        # stays (harmless).
+        card_win = None
+        if panel is not None:
+            from card_window import CardWindow
+            card_win = CardWindow(_loop, panel.on_thought)
+            panel.card_win = card_win
+
+        def _build_ui():
+            root = ui_thread.root
+            # Floating nav toolbar (back / forward / reload) in the strip
+            # ABOVE the browser. A separate window is the whole point: the
+            # CDP page-surface grab never captures it (no screenshot
+            # pollution, no per-capture flicker), and clicks don't steal
+            # browser focus (WS_EX_NOACTIVATE). A click records the matching
+            # keyboard-shortcut action and performs the real navigation —
+            # same path the real Alt+Left / Alt+Right / F5 keys already take.
+            try:
+                from nav_toolbar import build_nav_toolbar
+                build_nav_toolbar(root, _loop, do_nav, width=win_w, height=NAV_BAR_H)
+            except Exception as e:
+                _ui_thread_mod._diag(f"  [warn] nav toolbar not started: {type(e).__name__}: {e}")
+
+            if card_win is not None:
+                try:
+                    _scr_w, _scr_h = _screen_size()
+                    _card_w = CARD_W
+                    # The viewport already reserves CARD_W on the right, so the
+                    # card sits just past the browser's right edge — no overlap.
+                    _card_x = min(win_w + 6, max(0, _scr_w - _card_w))
+                    _card_h = min(660, max(420, _scr_h - NAV_BAR_H - 40))
+                    card_win.build(root, width=_card_w, height=_card_h,
+                                    x=_card_x, y=NAV_BAR_H)
+                    _ui_thread_mod._diag(f"  [layout] card window at +{_card_x}+{NAV_BAR_H} "
+                                         f"({_card_w}x{_card_h})")
+                except Exception as e:
+                    _ui_thread_mod._diag(f"  [warn] card window not started: {type(e).__name__}: {e}")
+
+        try:
+            ui_thread.run(_build_ui)
         except Exception as e:
-            print(f"  [warn] nav toolbar not started: {e}")
+            _ui_thread_mod._diag(f"  [warn] UI thread build failed: {type(e).__name__}: {e}")
 
         # Background screenshot cache — refreshes recorder.last_png_bytes at a
         # low rate so every action handler can use the PRE-action page state
@@ -496,41 +567,29 @@ async def run_tracker(task_description, session_dir, start_url,
             try:
                 bclient = await context.new_cdp_session(page)
                 wid = (await bclient.send("Browser.getWindowForTarget"))["windowId"]
-                b0 = dict((await bclient.send(
+                target = dict((await bclient.send(
                     "Browser.getWindowBounds", {"windowId": wid}))["bounds"])
             except Exception as e:
                 print(f"  [warn] window-size guard disabled: {e}")
                 return
-            # Strip the resize border first (matched by the current geometry).
+            target.pop("windowState", None)   # only pin left/top/width/height
             try:
                 locked = await asyncio.to_thread(
                     _make_window_unresizable,
-                    b0.get("left", 0), b0.get("top", NAV_BAR_H),
-                    b0.get("width", win_w), b0.get("height", win_h))
+                    target.get("left", 0), target.get("top", NAV_BAR_H),
+                    target.get("width", win_w), target.get("height", win_h))
                 print(f"  [layout] window resize "
                       f"{'disabled (border removed)' if locked else 'guarded by watchdog'}")
             except Exception:
                 pass
-            # Re-read the *post-strip* size as the target so the watchdog isn't
-            # forever fighting the few-px frame change (which would setWindowBounds
-            # every tick and fire resize events that close dropdown/hover menus).
-            try:
-                tb = (await bclient.send(
-                    "Browser.getWindowBounds", {"windowId": wid}))["bounds"]
-                tw, th = tb.get("width", win_w), tb.get("height", win_h)
-            except Exception:
-                tw, th = win_w, win_h
-            # Correct ONLY a real resize (>12px), size only. Ignore moves and tiny
-            # jitter — never call setWindowBounds in steady state.
             while not cache_stop.is_set():
                 try:
                     cur = (await bclient.send(
                         "Browser.getWindowBounds", {"windowId": wid}))["bounds"]
-                    if abs(cur.get("width", tw) - tw) > 12 or \
-                       abs(cur.get("height", th) - th) > 12:
-                        await bclient.send(
-                            "Browser.setWindowBounds",
-                            {"windowId": wid, "bounds": {"width": tw, "height": th}})
+                    if any(cur.get(k) != target.get(k)
+                           for k in ("left", "top", "width", "height")):
+                        await bclient.send("Browser.setWindowBounds",
+                                           {"windowId": wid, "bounds": target})
                 except Exception:
                     pass
                 try:
@@ -563,7 +622,15 @@ async def run_tracker(task_description, session_dir, start_url,
         # Wait until the user closes the browser window.
         closed = asyncio.Event()
 
-        def _on_closed(*args):
+        def _on_closed(*args, _reason="unknown"):
+            # Diagnostic: print WHICH event ended the session (context-close /
+            # page-close / page-crash) — without this all three look identical
+            # downstream, making it impossible to tell a worker-initiated close
+            # apart from a renderer crash after the fact. Uses the flushed
+            # diag logger, not plain print(), since stdout is unreliable when
+            # redirected (block-buffered, may never flush before exit).
+            import ui_thread as _diag_mod
+            _diag_mod._diag(f"  [info] session ending: reason={_reason} step={recorder.step}")
             # Cancel pending timers immediately so they don't fire after the
             # page is gone (which would cause TargetClosedError noise).
             converter._wait_active = False
@@ -575,8 +642,13 @@ async def run_tracker(task_description, session_dir, start_url,
                 converter._backspace_task.cancel()
             closed.set()
 
-        context.on("close", _on_closed)
-        page.on("close", _on_closed)
+        context.on("close", lambda *a: _on_closed(*a, _reason="context-close"))
+        page.on("close", lambda *a: _on_closed(*a, _reason="page-close"))
+        # A renderer crash ("Aw, Snap", e.g. Amazon variant scripts blowing up)
+        # does NOT fire "close" — Playwright emits a separate "crash" event. Treat
+        # it as a stop, else the wait below blocks forever and the web UI stays
+        # stuck on "기록중".
+        page.on("crash", lambda *a: _on_closed(*a, _reason="page-crash"))
 
         if stop_flag is None:
             print("\n>>> Browser is open. Perform your task there. <<<")
@@ -633,9 +705,20 @@ async def run_tracker(task_description, session_dir, start_url,
         if guard_task and not guard_task.done():
             guard_task.cancel()
 
-        # Close the floating nav toolbar window.
-        if nav_stop is not None:
-            nav_stop.set()
+        # Close THIS session's windows (nav toolbar + thought card) only —
+        # the shared Tk thread/root stays alive for the next session (see
+        # ui_thread.py: tearing the whole interpreter down and recreating it
+        # per session is what caused the freeze).
+        def _teardown_ui():
+            for w in list(ui_thread.root.winfo_children()):
+                try:
+                    w.destroy()
+                except Exception:
+                    pass
+        try:
+            ui_thread.run(_teardown_ui)
+        except Exception as e:
+            print(f"  [warn] UI thread teardown failed: {e}")
 
         # Stop idle timer and flush buffered actions.
         await converter.stop_wait_timer()
@@ -701,12 +784,13 @@ async def run_tracker(task_description, session_dir, start_url,
 
         recorder.finalize()
 
-        # Close the browser if the user ended via console.
-        if browser_alive:
-            try:
-                await context.close()
-            except Exception:
-                pass
+        # Best-effort close the context: a no-op if the user already X-closed it,
+        # and the cleanup that removes the leftover window after a renderer crash
+        # (browser_alive is False there, but the browser process is still up).
+        try:
+            await asyncio.wait_for(context.close(), timeout=5)
+        except Exception:
+            pass
 
     return recorder
 

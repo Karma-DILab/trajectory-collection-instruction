@@ -3,8 +3,10 @@
 Splits two paths:
   WEBTRACKER_ASSETS_DIR -> read-only: manual.html, inject.js (bundled inside exe)
   WEBTRACKER_STATE_DIR  -> writable : users/, browser_profile/ (next to the exe)
-Also points Playwright at the bundled Chromium so no `playwright install` is
-needed on the target machine.
+
+The browser is the system-installed Google Chrome (tracker.py launches it via
+channel="chrome"), not a bundled Chromium, so Chrome must be installed on the
+target machine.
 """
 
 import os
@@ -25,9 +27,8 @@ def _force_utf8_console():
 def _bootstrap():
     if getattr(sys, "frozen", False):
         bundle = sys._MEIPASS  # PyInstaller extract dir (read-only)
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = os.path.join(bundle, "ms-playwright")
-        os.environ["WEBTRACKER_ASSETS_DIR"]    = bundle
-        os.environ["WEBTRACKER_STATE_DIR"]     = os.path.dirname(os.path.abspath(sys.executable))
+        os.environ["WEBTRACKER_ASSETS_DIR"] = bundle
+        os.environ["WEBTRACKER_STATE_DIR"]  = os.path.dirname(os.path.abspath(sys.executable))
     else:
         here = os.path.dirname(os.path.abspath(__file__))
         os.environ.setdefault("WEBTRACKER_ASSETS_DIR", here)

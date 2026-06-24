@@ -1,4 +1,4 @@
-"""Task list (embedded). 88 tasks total, 20 active.
+"""Task list (embedded). 88 tasks total; exe 배포용 10개 활성 (_ACTIVE_IDS 참고).
    task_type values: information_seeking | actionable | navigation.
 """
 
@@ -144,6 +144,13 @@ TASKS = [
     'task': 'Book accommodation near Kansai International Airport for August 1-5 that has a rating of 4.9 or higher, can host two people, has a washing machine, and offers self check-in',
     'type_code': 2},
 ]
+
+# exe 배포용: 아래 _ACTIVE_IDS 10개만 활성화합니다.
+#   - yelp(id 52)는 봇 차단(PerimeterX)이 심해 제외.
+#   - 대신 weather.com(id 65) 하나를 복구해 10개 유지.
+# 활성 task를 바꾸려면 이 id 목록만 수정하면 됩니다 (전체 후보는 위 TASKS 참고).
+_ACTIVE_IDS = [16, 18, 26, 31, 40, 44, 45, 47, 48, 65]
+TASKS = [_t for _t in TASKS if _t['id'] in _ACTIVE_IDS]
 
 # ──────────────────────────────────────────────
 # 아래 68개 task는 비활성 상태입니다 (주석 처리).

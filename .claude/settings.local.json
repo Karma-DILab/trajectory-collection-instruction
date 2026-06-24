@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/dha81/anaconda3/Library/bin/**)",
+      "PowerShell(Get-Process *)",
+      "Bash(\"/c/Users/dha81/anaconda3/envs/web/Scripts/pyinstaller.exe\" --clean --noconfirm WebTracker.spec)",
+      "Bash(conda env *)",
+      "Bash(where python *)",
+      "Bash(\"C:/Users/dha81/anaconda3/envs/web/python.exe\" --version)",
+      "Bash(\"C:/Users/dha81/anaconda3/envs/web/python.exe\" -m pip list)",
+      "Bash(\"C:/Users/dha81/anaconda3/envs/web/Scripts/pyinstaller.exe\" --clean --noconfirm WebTracker.spec)",
+      "Bash(./WebTracker.exe)",
+      "Bash(echo \"PID:$!\")",
+      "Bash(tasklist)",
+      "Bash(taskkill //PID 32396 //F)",
+      "Bash(taskkill //PID 24404 //F)",
+      "Bash(rm -f exe_test_output.log)",
+      "Bash(rmdir users *)",
+      "Read(//c/Users/dha81/**)",
+      "Read(//c/Users/dha81/Downloads/**)"
+    ]
+  }
+}

@@ -10,6 +10,7 @@ dist/
 # Runtime / generated data (machine-specific, not source)
 browser_profile/
 browser_profile_explore/
+browser_profile_plaintest/
 users/
 events/
 progress.json

@@ -13,8 +13,6 @@ Flow per action:
       -> recorder.set_thought + show next queued card, or unlock the page
 """
 import asyncio
-import base64
-import os
 
 
 def summarize(action):
@@ -56,7 +54,8 @@ class InPagePanel:
         self._processing = 0   # input events being handled right now (see below)
         self.closed = False
         self.outcome = None    # "success"/"fail"/"retry" chosen on the finish buttons
-        self.on_cleared = None  # async callback fired when all cards are answered
+        self.card_win = None   # separate-window card (set by tracker); the card
+                               # lives OUT of the page so it can't break page nav
 
     @property
     def page(self):
@@ -78,9 +77,11 @@ class InPagePanel:
         The busy state closes the race where a navigating action (e.g. a
         search) lands us on the new page before Python has finished recording
         it — without it the page would unlock and leak the next inputs."""
-        c = self._current
-        if c:
-            return {**c, "task": self.task, "pending": self.pending_count()}
+        # The card itself lives in a separate OS window that survives page
+        # navigation, so a fresh page only needs to RE-APPLY the dim/lock if a
+        # thought is still pending — it doesn't re-render the card.
+        if self._current is not None:
+            return {"pending": True}
         if self._processing > 0:
             return {"busy": True}
         return None
@@ -101,11 +102,13 @@ class InPagePanel:
             await self._show(self._current)
         else:
             await self._set_lock(False)   # all answered -> release the page
-            if callable(self.on_cleared):
-                try:
-                    await self.on_cleared()
-                except Exception:
-                    pass
+            if self.card_win is not None:
+                self.card_win.hide()
+            try:                          # hand focus back to the browser window
+                if self.page is not None:
+                    await self.page.bring_to_front()
+            except Exception:
+                pass
 
     def finish(self, status="success"):
         """__webtrack_finish: one of the 성공/실패/다시하기 buttons was clicked.
@@ -131,17 +134,13 @@ class InPagePanel:
     # ---------- card pump ----------
 
     def enqueue(self, step, action, shot_abs):
-        """Sync entry point from recorder.record(). Reads the screenshot into a
-        data URL, promotes it to the current card SYNCHRONOUSLY (so pending_card
-        / a freshly-loaded page sees it immediately, with no task-tick gap), and
-        schedules the async page render."""
+        """Sync entry point from recorder.record(). Promotes the action to the
+        current card SYNCHRONOUSLY (so pending_card sees it immediately) and
+        schedules the async show. The card window loads the screenshot file
+        itself, so we just pass the path."""
         try:
-            img = ""
-            if shot_abs and os.path.isfile(shot_abs):
-                with open(shot_abs, "rb") as f:
-                    img = "data:image/jpeg;base64," + \
-                          base64.b64encode(f.read()).decode("ascii")
-            self._queue.append({"step": step, "summary": summarize(action), "img": img})
+            self._queue.append({"step": step, "summary": summarize(action),
+                                "img_path": shot_abs})
             if self._current is None and self._queue:
                 self._current = self._queue.pop(0)
                 asyncio.create_task(self._show(self._current))
@@ -149,18 +148,21 @@ class InPagePanel:
             print(f"  [warn] panel enqueue failed: {e}")
 
     async def _show(self, card):
-        pg = self.page
-        if pg is None:
-            return
-        payload = {**card, "task": self.task, "pending": self.pending_count()}
-        try:
-            await pg.evaluate(
-                "(c) => window.__webtrack_showcard && window.__webtrack_showcard(c)",
-                payload)
-        except Exception:
-            # Page is navigating/closing — the next page re-fetches the card via
-            # pending_card() on load, so nothing is lost.
-            pass
+        # Show the card FIRST — card_win.show is non-blocking (it just queues a
+        # command to the window's own thread). THEN dim+block the page. If we
+        # awaited the lock first, a navigating action's page.evaluate can stall
+        # while the page changes, and the card would appear late / look like it
+        # vanished (page goes dark, no card). The in-page dim is harmless — only
+        # the old in-page card OVERLAY broke navigation; the card now lives in a
+        # separate window that never touches the page DOM.
+        if self.card_win is not None:
+            try:
+                self.card_win.show(card["step"], card["summary"],
+                                   card.get("img_path"), self.task,
+                                   self.pending_count())
+            except Exception as e:
+                print(f"  [warn] card window show failed: {e}")
+        await self._set_lock(True)
 
     async def _set_lock(self, on):
         pg = self.page

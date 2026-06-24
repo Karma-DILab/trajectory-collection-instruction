@@ -9,12 +9,13 @@
 
 ### 1) 최초 1회 setup
 
+**Google Chrome이 PC에 설치되어 있어야 합니다** (봇 탐지 회피를 위해 Playwright 번들 Chromium 대신 실제 Chrome을 띄웁니다). 없으면 먼저 https://www.google.com/chrome/ 에서 설치하세요.
+
 PowerShell 에서 이 폴더로 이동한 뒤:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
-.\.venv\Scripts\playwright install chromium
 ```
 
 ### 2) 실행
@@ -49,7 +50,8 @@ python -m venv .venv
 
 - Windows 10 / 11
 - Python 3.10+ (3.12 권장)
-- 디스크 1GB+ (Chromium 약 150MB + 데이터)
+- **Google Chrome 설치 필요** (Playwright가 번들 Chromium이 아니라 이 Chrome을 직접 띄움)
+- 디스크 수백 MB+ (데이터 저장용; 브라우저는 별도 설치된 Chrome 사용)
 
 ## 파일 구성
 

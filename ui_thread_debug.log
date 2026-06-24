@@ -1,0 +1,4 @@
+  [diag] UI thread starting. frozen=False PATH=C:\Users\dha81\anaconda3\envs\web;C:\Users\dha81\anaconda3\envs\web\Library\mingw-w64\bin;C:\Users\dha81\anaconda3\envs\web\Library\usr\bin;C:\Users\dha81\anaconda3\envs\web\Library\bin;C:\Users\dha81\anaconda3\envs\web\Scripts;C:\Users\dha81\anaconda3\envs\web\bin;C:\Users\dha81\anaconda3\Scripts\c
+  [diag] tkinter imported OK
+  [diag] tk.Tk() root created OK
+  [layout] card window at +1434+46 (460x660)

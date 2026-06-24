@@ -1318,17 +1318,6 @@
   .skip-btn:hover { background: #ffedd5; }
   .skip-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  /* Finalize form — neutral palette (outcome buttons keep their own colours) */
-  #finalizeForm {
-    background: white;
-    border: 1.5px solid var(--border);
-  }
-  #finalizeReason {
-    background: white;
-    border-color: #d1d5db;
-  }
-  #finalizeReason::placeholder { color: #9ca3af; }
-
   /* Repeat note */
   .repeat-note {
     background: #eff6ff;
@@ -1980,12 +1969,12 @@
     <!-- 작업 종료(창 닫음) 후: 결과 선택 + 완료 이유 작성 -->
     <div id="finalizeForm" class="submit-section" style="display:none; flex-direction:column; align-items:stretch; gap:14px; margin-bottom:28px;">
       <div>
-        <strong style="font-size:16px; color:var(--fg); display:block; margin-bottom:4px;">작업을 마치셨나요?</strong>
+        <strong style="font-size:16px; color:var(--good); display:block; margin-bottom:4px;">작업을 마치셨나요?</strong>
         <span style="font-size:14px; color:#374151;">결과를 선택하고, 그렇게 판단한 이유를 작성한 뒤 저장하세요.</span>
       </div>
-      <div id="finalizeScreenshot" style="display:none; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:#f9fafb;">
-        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); padding:8px 12px; background:#f3f4f6; border-bottom:1px solid var(--border);">마지막 화면 (창 닫기 직전)</div>
-        <img id="finalizeScreenshotImg" style="display:block; width:100%; max-height:480px; object-fit:contain;" alt="마지막 스크린샷">
+      <div>
+        <div style="font-size:13px; color:var(--muted); margin-bottom:4px;">마지막 화면 (최종 관찰)</div>
+        <img id="finalizeShot" alt="마지막 화면" style="display:none; width:100%; max-height:340px; object-fit:contain; border:1px solid var(--border); border-radius:8px; background:#f3f4f6;" />
       </div>
       <div style="display:flex; gap:10px;">
         <button class="devtools-outcome success-btn" data-status="success" style="flex:1; padding:13px 0; font-size:14px;">성공</button>
@@ -2138,19 +2127,35 @@
     if (f) f.style.display = "flex";
     const msg = document.getElementById("finalizeMsg");
     if (msg) msg.textContent = "";
+    loadFinalizeShot();   // show the final screenshot above the 성공/실패 buttons
     updateSavedListVisibility();
-    loadLastScreenshot();
   }
-  function loadLastScreenshot() {
-    const wrapper = document.getElementById("finalizeScreenshot");
-    const img = document.getElementById("finalizeScreenshotImg");
-    if (!wrapper || !img) return;
-    wrapper.style.display = "none";
-    img.src = "";
-    const url = tUrl("/last-screenshot");
-    img.onload = function () { wrapper.style.display = "block"; };
-    img.onerror = function () { wrapper.style.display = "none"; };
-    img.src = url;
+  // Build the URL that serves a step's saved screenshot (prefer the marked one
+  // that shows the click point). Returns "" when the step has no screenshot.
+  function shotUrl(sname, step) {
+    var rel = (step && (step.marked_screenshot || step.screenshot)) || "";
+    if (!rel) return "";
+    var base = rel.split("/").pop();
+    return tUrl("/session/" + encodeURIComponent(sname) + "/screenshot/" +
+                encodeURIComponent(base));
+  }
+  // Show the just-finished session's LAST screenshot in the finalize form.
+  async function loadFinalizeShot() {
+    var img = document.getElementById("finalizeShot");
+    if (!img) return;
+    img.style.display = "none";
+    try {
+      var st = await (await fetch(tUrl("/status"))).json();
+      var dir = st.last_session_dir || st.session_dir || "";
+      if (!dir) return;
+      var sname = dir.split(/[\\/]/).pop();
+      var data = await (await fetch(tUrl("/session/" +
+        encodeURIComponent(sname) + "/trajectory"))).json();
+      var steps = data.steps || [];
+      if (!steps.length) return;
+      var url = shotUrl(sname, steps[steps.length - 1]);
+      if (url) { img.src = url; img.style.display = "block"; }
+    } catch (e) {}
   }
   function selectOutcome(btn) {
     finalizeStatus = btn.dataset.status;
@@ -2264,8 +2269,13 @@
       var steps = data.steps || [];
       c.innerHTML = steps.map(function (st, i) {
         var th = (st.thought || "").trim();
-        return '<div style="border-left:3px solid #ddd6fe;padding:4px 10px;margin:6px 0;">' +
+        var url = shotUrl(sname, st);
+        var imgHtml = url
+          ? '<img src="' + url + '" loading="lazy" style="width:100%;max-height:240px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;margin:4px 0;background:#f9fafb;" />'
+          : "";
+        return '<div style="border-left:3px solid #ddd6fe;padding:4px 10px;margin:10px 0;">' +
           '<div style="font-family:ui-monospace,monospace;font-size:12px;color:#374151;">' + (i + 1) + '. ' + escapeHtml(actionStr(st.action)) + '</div>' +
+          imgHtml +
           '<div style="font-size:13px;color:' + (th ? "#1f2937" : "#9ca3af") + ';">' + (th ? escapeHtml(th) : "(생각 없음)") + '</div>' +
         '</div>';
       }).join("") || "(스텝 없음)";
