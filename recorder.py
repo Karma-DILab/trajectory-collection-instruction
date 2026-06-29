@@ -67,11 +67,18 @@ class WebActionRecorder:
         """Swap the page used for screenshots (e.g. after navigation)."""
         self.page = page
 
-    async def record(self, action_dict, fresh=False):
+    async def record(self, action_dict, fresh=False, png_override=None):
         """Record one action. When fresh=True, take an immediate screenshot
         instead of using the background cache — used for `type` so the
         screenshot reflects the FULL typed text (cache may lag by up to 500ms
-        and miss the last few keystrokes)."""
+        and miss the last few keystrokes).
+
+        When png_override is given, use those exact bytes as the screenshot and
+        do NOT advance the background cache — used for `scroll`, which is
+        debounced ~0.5s: by flush time the background cache already shows the
+        POST-scroll page, so the converter snapshots the PRE-scroll frame at
+        gesture start and passes it here (so scroll, like every other action,
+        is paired with the page state from BEFORE it happened)."""
         # Wait actions reuse the previous screenshot — taking a fresh capture
         # adds a visible flash without showing anything new (the user was idle).
         is_wait = action_dict.get("action") == "wait"
@@ -81,7 +88,12 @@ class WebActionRecorder:
             png_bytes = None
             rel = f"screenshot/{self.step:04d}.jpg"  # reference previous step's file
         else:
-            if fresh or self.last_png_bytes is None:
+            if png_override is not None:
+                # Explicit PRE-action frame supplied by the caller (scroll):
+                # the frame captured at the moment the scroll gesture started,
+                # before the page moved.
+                png_bytes = png_override
+            elif fresh or self.last_png_bytes is None:
                 try:
                     from tracker import cdp_screenshot
                     png_bytes = await cdp_screenshot(self.page, fmt="jpeg", quality=95)
@@ -108,7 +120,11 @@ class WebActionRecorder:
             rel = f"screenshot/{name}"
             with open(os.path.join(self.screenshot_dir, name), "wb") as f:
                 f.write(png_bytes)
-            self.last_png_bytes = png_bytes
+            # Don't let the intentionally-stale scroll frame become the cache —
+            # the NEXT action must still observe the POST-scroll page (which the
+            # background cache already holds).
+            if png_override is None:
+                self.last_png_bytes = png_bytes
 
         if reuse_prev:
             self.step += 1

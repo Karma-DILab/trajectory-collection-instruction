@@ -31,6 +31,7 @@ class ActionConverter:
         self.type_buffer = ""
         self.type_coord = None       # cursor coord for the buffered text
         self.scroll_accum = 0
+        self._scroll_pre_png = None  # cached frame snapshotted at scroll-gesture start
         self.backspace_count = 0     # consecutive standalone backspaces pending
         self._scroll_task = None
         self._type_task = None
@@ -243,6 +244,14 @@ class ActionConverter:
         # {type, scroll, ...} order instead of cutting into them silently.
         await self._flush_type()
         await self._flush_backspace()
+        # Snapshot the PRE-scroll frame at the START of a new scroll gesture
+        # (scroll_accum == 0 means nothing is accumulated yet, so this wheel
+        # begins a fresh gesture). Scroll is debounced by SCROLL_FLUSH_DELAY, and
+        # the background screenshot cache keeps advancing during that window — by
+        # flush time it shows the POST-scroll page. Grabbing the cached frame now
+        # gives scroll the same pre-action observation every other action gets.
+        if self.scroll_accum == 0:
+            self._scroll_pre_png = self.recorder.last_png_bytes
         delta_y = ev.get("deltaY", 0)
         # Fara: positive = up, wheel.deltaY: positive = down
         self.scroll_accum -= int(round(delta_y))
@@ -312,8 +321,13 @@ class ActionConverter:
     async def _flush_scroll(self):
         if self.scroll_accum == 0:
             return
-        await self.recorder.record({"action": "scroll", "pixels": self.scroll_accum})
+        # Pair the scroll with the frame captured BEFORE the gesture started,
+        # not the (post-scroll) background cache available now.
+        await self.recorder.record(
+            {"action": "scroll", "pixels": self.scroll_accum},
+            png_override=self._scroll_pre_png)
         self.scroll_accum = 0
+        self._scroll_pre_png = None
 
     async def _flush_backspace(self):
         if self.backspace_count <= 0:

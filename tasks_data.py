@@ -6,7 +6,7 @@ Runtime only consumes `id`, `site_url`, `task`. `final_url` is kept as an
 """
 
 TASKS = [
-  { 'id': 1,  'site_url': 'nike.com',        'final_url': '', 'task': 'Find Nike Vomero plus women’s running shoes in white and black in size 240' },
+  { 'id': 1,  'site_url': 'nike.com',        'final_url': '', 'task': 'Find Nike Vomero Plus women’s running shoes in white and black' },
   { 'id': 2,  'site_url': 'amazon.com',      'final_url': '', 'task': 'Purchase a 50-count pack of Starbucks Nespresso capsules in the Colombia flavor.' },
   { 'id': 3,  'site_url': 'ebay.com',        'final_url': '', 'task': "Purchase the lowest-priced 'New 3DS' available for 'Buy It Now' on eBay." },
   { 'id': 4,  'site_url': 'amazon.com',      'final_url': '', 'task': 'Find a Blush MacBook Neo with 512GB storage without AppleCare.' },
