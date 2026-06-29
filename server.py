@@ -11,7 +11,7 @@ Endpoints:
     GET  /tasks                             -> all tasks
     GET  /current-task?user=NAME            -> current task for that user
     POST /set-index?user=NAME    {index}    -> jump to a specific task index
-    POST /next-task?user=NAME               -> pick a random next task
+    POST /next-task?user=NAME               -> pick the next uncompleted task in order
     POST /start?user=NAME                   -> start tracking the current task
     POST /stop?user=NAME         {answer}   -> stop tracking
     GET  /status?user=NAME                  -> live tracker state for that user
@@ -80,7 +80,7 @@ _users_lock = threading.Lock()
 
 def _default_progress():
     return {
-        "current_index": random.randrange(len(TASKS)) if TASKS else 0,
+        "current_index": 0,
         "completed_ids": [],
         "practice_done": False,
     }
@@ -279,7 +279,7 @@ def _pick_next_task(info, skip_current=False):
     if not remaining:
         return None
     pool = [i for i, t in enumerate(TASKS) if t["id"] in remaining]
-    idx = random.choice(pool)
+    idx = min(pool)
     return idx
 
 
