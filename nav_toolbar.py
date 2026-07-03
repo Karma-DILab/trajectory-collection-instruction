@@ -32,7 +32,7 @@ _BUTTONS = (
 )
 
 
-def build_nav_toolbar(master, loop, on_nav, *, width, height=46, x=0, y=0):
+def build_nav_toolbar(master, loop, on_nav, *, width, height=46, x=0, y=0, task=""):
     """Build the floating nav toolbar as a Toplevel of `master`.
 
     MUST be called ON the Tk thread that owns `master` (pass as a step inside
@@ -43,6 +43,8 @@ def build_nav_toolbar(master, loop, on_nav, *, width, height=46, x=0, y=0):
     on_nav: coroutine function on_nav(direction) -> records + navigates
     width:  bar width in physical px (the process is DPI-aware, so Tk geometry
             px line up with Chrome's --window-size/position px)
+    task:   the task description to show (always-visible) next to the buttons,
+            so the goal is on screen from the very first frame; "" hides it
     """
     import tkinter as tk
 
@@ -70,6 +72,17 @@ def build_nav_toolbar(master, loop, on_nav, *, width, height=46, x=0, y=0):
             bd=0, relief="flat", cursor="hand2", padx=12, pady=4,
         )
         b.pack(side="left", padx=(8, 0), pady=6)
+
+    # Always-visible task label filling the rest of the bar. The thought card
+    # (which also shows the task) only appears AFTER the first action, so this
+    # is what makes the goal visible on the very first screen — and every screen
+    # after — while the worker is deciding what to do. A single clipped line is
+    # fine; the full text still lives on each card.
+    if task:
+        task_lbl = tk.Label(
+            bar, text="Task:  " + str(task), bg="#202124", fg="#f1f3f4",
+            font=("Segoe UI", 10, "bold"), anchor="w", justify="left")
+        task_lbl.pack(side="left", fill="x", expand=True, padx=(16, 12))
 
     # Force the window to actually map + raise. Override-redirect windows
     # created from a worker thread don't always show on their own.

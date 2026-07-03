@@ -5,6 +5,7 @@ import base64
 import ctypes
 import io
 import os
+import shutil
 import threading
 
 from playwright.async_api import async_playwright
@@ -219,6 +220,17 @@ async def run_tracker(task_description, session_dir, start_url,
     state_dir = os.environ.get("WEBTRACKER_STATE_DIR") or os.path.dirname(os.path.abspath(__file__))
     assets_dir = os.environ.get("WEBTRACKER_ASSETS_DIR") or state_dir
     user_data_dir = os.path.join(state_dir, USER_DATA_SUBDIR)
+    # Full profile reset on every tracking session: wipe the persistent browser
+    # profile (cookies, logins, HTTP cache, local storage) so each task starts
+    # from a clean slate. Best-effort — if a stale lock survives from a crashed
+    # session we log it and proceed with whatever remains rather than aborting
+    # the launch.
+    if os.path.isdir(user_data_dir):
+        try:
+            shutil.rmtree(user_data_dir)
+            print("  [profile] cleared browser_profile (fresh session)")
+        except Exception as e:
+            print(f"  [warn] could not clear browser_profile: {e}")
     os.makedirs(user_data_dir, exist_ok=True)
     inject_js_path = os.path.join(assets_dir, "inject.js")
 
@@ -496,7 +508,7 @@ async def run_tracker(task_description, session_dir, start_url,
         card_win = None
         if panel is not None:
             from card_window import CardWindow
-            card_win = CardWindow(_loop, panel.on_thought)
+            card_win = CardWindow(_loop, panel.on_thought, panel.on_delete)
             panel.card_win = card_win
 
         def _build_ui():
@@ -510,7 +522,8 @@ async def run_tracker(task_description, session_dir, start_url,
             # same path the real Alt+Left / Alt+Right / F5 keys already take.
             try:
                 from nav_toolbar import build_nav_toolbar
-                build_nav_toolbar(root, _loop, do_nav, width=win_w, height=NAV_BAR_H)
+                build_nav_toolbar(root, _loop, do_nav, width=win_w,
+                                  height=NAV_BAR_H, task=task_description)
             except Exception as e:
                 _ui_thread_mod._diag(f"  [warn] nav toolbar not started: {type(e).__name__}: {e}")
 

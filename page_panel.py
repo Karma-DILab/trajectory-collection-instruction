@@ -13,6 +13,7 @@ Flow per action:
       -> recorder.set_thought + show next queued card, or unlock the page
 """
 import asyncio
+import os
 
 
 def summarize(action):
@@ -102,6 +103,51 @@ class InPagePanel:
             await self._show(self._current)
         else:
             await self._set_lock(False)   # all answered -> release the page
+            if self.card_win is not None:
+                self.card_win.hide()
+            try:                          # hand focus back to the browser window
+                if self.page is not None:
+                    await self.page.bring_to_front()
+            except Exception:
+                pass
+
+    async def on_delete(self, step):
+        """The card's delete button was pressed for `step`: drop that step from
+        the trajectory entirely (jsonl line + screenshot) and renumber the rest,
+        then advance to the next queued card or release the page.
+
+        Mirrors on_thought's tail, but instead of saving a thought it removes
+        the step. Because delete_step renumbers every LATER step down by one, we
+        also fix the step number (and screenshot path) of any still-queued
+        cards so their eventual thought/delete targets the right line."""
+        try:
+            step = int(step)
+        except Exception:
+            return
+        ok = False
+        try:
+            ok = self.recorder.delete_step(step)
+        except Exception as e:
+            print(f"  [warn] delete_step failed: {e}")
+        try:
+            if self._current is not None and int(self._current["step"]) == step:
+                self._current = None
+        except Exception:
+            self._current = None
+        if ok:
+            for c in self._queue:
+                try:
+                    if int(c["step"]) > step:
+                        c["step"] = int(c["step"]) - 1
+                        c["img_path"] = os.path.join(
+                            self.recorder.screenshot_dir, f"{c['step']:04d}.jpg")
+                except Exception:
+                    pass
+        if self._queue:
+            self._current = self._queue.pop(0)   # promote next (sync)
+            await self._show(self._current)
+        else:
+            await self._set_lock(False)   # nothing left -> release the page
             if self.card_win is not None:
                 self.card_win.hide()
             try:                          # hand focus back to the browser window

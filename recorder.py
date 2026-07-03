@@ -186,6 +186,76 @@ class WebActionRecorder:
             except Exception as e:
                 print(f"  [warn] set_thought write failed: {e}")
 
+    def delete_step(self, step):
+        """Delete the entry recorded at `step` (1-based) entirely: drop its
+        jsonl line, remove its screenshot file, then renumber every LATER step
+        down by one — jsonl line order, screenshot filenames, and each entry's
+        `screenshot` field — so the invariants `step == line index + 1` and
+        `screenshot/{step:04d}.jpg` still hold. Returns True on success, False
+        if `step` is out of range.
+
+        Assumes one step == one unique screenshot file, which holds in live
+        (card) tracking because that mode never emits `wait` (the only action
+        that reuses a prior step's image). Runs on the asyncio loop, so it is
+        serialized with record(); _io_lock guards it against the terminate
+        appender / set_thought path."""
+        with self._io_lock:
+            if not os.path.isfile(self.jsonl_path):
+                return False
+            try:
+                with open(self.jsonl_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+            except Exception:
+                return False
+            idx = step - 1
+            if idx < 0 or idx >= len(lines):
+                return False
+            n = len(lines)
+
+            # Remove the deleted step's own screenshot file.
+            old_shot = os.path.join(self.screenshot_dir, f"{step:04d}.jpg")
+            try:
+                if os.path.isfile(old_shot):
+                    os.remove(old_shot)
+            except Exception as e:
+                print(f"  [warn] could not remove screenshot for step {step}: {e}")
+
+            # Shift every later screenshot file down by one (ascending order so
+            # each destination slot is already free): {s}.jpg -> {s-1}.jpg.
+            for s in range(step + 1, n + 1):
+                src = os.path.join(self.screenshot_dir, f"{s:04d}.jpg")
+                dst = os.path.join(self.screenshot_dir, f"{s - 1:04d}.jpg")
+                try:
+                    if os.path.isfile(src):
+                        os.replace(src, dst)
+                except Exception as e:
+                    print(f"  [warn] could not renumber screenshot {s}->{s-1}: {e}")
+
+            # Rebuild the jsonl without the deleted line, rewriting each row's
+            # `screenshot` field to match its new (line-order) step number.
+            del lines[idx]
+            new_lines = []
+            for i, ln in enumerate(lines):
+                try:
+                    obj = json.loads(ln)
+                except Exception:
+                    new_lines.append(ln if ln.endswith("\n") else ln + "\n")
+                    continue
+                new_step = i + 1
+                if isinstance(obj.get("screenshot"), str) and obj["screenshot"]:
+                    obj["screenshot"] = f"screenshot/{new_step:04d}.jpg"
+                new_lines.append(json.dumps(obj, ensure_ascii=False) + "\n")
+            try:
+                with open(self.jsonl_path, "w", encoding="utf-8") as f:
+                    f.writelines(new_lines)
+            except Exception as e:
+                print(f"  [warn] delete_step write failed: {e}")
+                return False
+
+            self.step = len(new_lines)
+            print(f"[del] removed step {step}: {n} -> {self.step} steps")
+            return True
+
     def finalize(self):
         self._write_meta(end_time=get_current_time())
 

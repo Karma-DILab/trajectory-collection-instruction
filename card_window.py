@@ -20,9 +20,10 @@ import queue
 
 
 class CardWindow:
-    def __init__(self, loop, on_thought):
+    def __init__(self, loop, on_thought, on_delete=None):
         self.loop = loop
         self.on_thought = on_thought          # coroutine: on_thought(step, text)
+        self.on_delete = on_delete            # coroutine: on_delete(step) | None
         self._cmds = queue.Queue()
         self._cur_step = None
         self._photo = None                    # keep a ref so Tk doesn't GC it
@@ -51,10 +52,14 @@ class CardWindow:
         wrap = width - 28
         pad = {"padx": 14, "fill": "x"}
 
+        step_lbl = tk.Label(win, text="", bg="#ffffff", fg="#1a73e8",
+                            font=("Segoe UI", 13, "bold"), anchor="w")
+        step_lbl.pack(**pad, pady=(12, 0))
+
         task_lbl = tk.Label(win, text="", bg="#ffffff", fg="#8a8f98",
                             font=("Segoe UI", 9), wraplength=wrap,
                             justify="left", anchor="w")
-        task_lbl.pack(**pad, pady=(12, 2))
+        task_lbl.pack(**pad, pady=(2, 2))
 
         tk.Label(win, text="관찰 (스크린샷)", bg="#ffffff", fg="#0a7d4b",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(**pad)
@@ -99,6 +104,39 @@ class CardWindow:
                              font=("Segoe UI", 11, "bold"), bd=0, relief="flat",
                              cursor="hand2")
         save_btn.pack(**pad, pady=(0, 4))
+
+        def do_delete():
+            step = self._cur_step
+            if step is None or self.on_delete is None:
+                return
+            try:
+                from tkinter import messagebox
+                if not messagebox.askyesno(
+                        "스텝 삭제",
+                        f"STEP {step} 을(를) 삭제할까요?\n"
+                        "이 행동과 스크린샷이 trajectory에서 제거되고,\n"
+                        "이후 스텝 번호가 하나씩 당겨집니다.",
+                        parent=win):
+                    return
+            except Exception:
+                pass
+            save_btn.config(state="disabled")
+            del_btn.config(state="disabled")
+            status.config(text="삭제 중...")
+            try:
+                asyncio.run_coroutine_threadsafe(
+                    self.on_delete(step), self.loop)
+            except Exception as e:
+                print(f"  [warn] delete dispatch failed: {e}")
+
+        del_btn = tk.Button(win, text="🗑  이 스텝 삭제", command=do_delete,
+                            bg="#fdecea", fg="#c5221f",
+                            font=("Segoe UI", 10, "bold"), bd=0, relief="flat",
+                            cursor="hand2")
+        # Only offer deletion when the driver wired a delete handler.
+        if self.on_delete is not None:
+            del_btn.pack(**pad, pady=(0, 4))
+
         status.pack(**pad, pady=(0, 8))
 
         def on_return(e):
@@ -110,10 +148,16 @@ class CardWindow:
 
         def render(step, summary, img_path, task, pending):
             self._cur_step = step
+            step_lbl.config(text=f"STEP {step}")
+            try:
+                win.title(f"STEP {step} · 생각 입력")
+            except Exception:
+                pass
             task_lbl.config(text="Task: " + (task or ""))
             act_lbl.config(text=summary or "")
             status.config(text="남은 입력: " + str(pending or 1))
             save_btn.config(state="normal")
+            del_btn.config(state="normal")
             ta.delete("1.0", "end")
             try:
                 if img_path and os.path.isfile(img_path):

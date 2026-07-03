@@ -3,9 +3,13 @@
 Mirrors PC-Agent/web_postprocess/refinement.py but trimmed for in-process use:
   1. drop leading consecutive `wait` actions
   2. drop `wait` whose screenshot is identical to the next entry's
-  3. drop consecutive duplicate `left_click` at the same coord
-  4. mark click point on each click screenshot -> *_marked.png
-  5. write a `marked_screenshot` field on every entry
+  3. mark click point on each click screenshot -> *_marked.png
+  4. write a `marked_screenshot` field on every entry
+
+NOTE: we intentionally do NOT drop consecutive same-coordinate `left_click`s.
+Repeated clicks on one spot are usually intentional (quantity +/- steppers,
+pagination "next", double-clicks, "load more"), and dropping them silently
+deletes real steps from the trajectory.
 """
 
 import os
@@ -22,19 +26,6 @@ from refine_utils import (
 def drop_all_waits(entries):
     """Mid-trajectory idle is rarely useful for training — remove every wait."""
     return [e for e in entries if get_action_type(e) != "wait"]
-
-
-def drop_duplicate_clicks(entries):
-    kept = []
-    for e in entries:
-        if kept:
-            prev = kept[-1]
-            if (get_action_type(prev) == "left_click"
-                    and get_action_type(e) == "left_click"
-                    and prev["action"].get("coordinate") == e["action"].get("coordinate")):
-                continue
-        kept.append(e)
-    return kept
 
 
 def mark_clicks(entries, session_dir):
@@ -76,7 +67,6 @@ def refine_session(session_dir):
 
     n_before = len(entries)
     entries = drop_all_waits(entries)
-    entries = drop_duplicate_clicks(entries)
     entries = mark_clicks(entries, session_dir)
 
     try:
